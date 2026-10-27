@@ -573,6 +573,7 @@ GameObject:
   - component: {fileID: 927083279}
   - component: {fileID: 927083278}
   - component: {fileID: 927083277}
+  - component: {fileID: 927083282}
   - component: {fileID: 927083281}
   m_Layer: 0
   m_Name: Player
@@ -689,8 +690,26 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 12165c79a72333440a6522939fc1a9e1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  m_EditorClassIdentifier: Assembly-CSharp::UponHeavyTides.Player.PlayerMovement
   movingSpeed: 3
+  acceleration: 6
+  rotationSpeed: 8
+  jumpHeight: 0.9
+  gravity: -20
+--- !u!114 &927083282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 927083276}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06ebec24c06377648b0e1d0f0eee784b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UponHeavyTides.Player.PlayerInputReader
+  moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  jumpAction: {fileID: -2099379676528639254, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
