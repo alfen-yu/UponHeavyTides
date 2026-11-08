@@ -4,7 +4,8 @@ namespace UponHeavyTides.Level0
 {
     public class CollectibleItem : MonoBehaviour
     {
-        [SerializeField] private string itemName = "Sunlit Pearl";
+        public string itemName = "Sunlit Pearl";
+        public string itemIdentifier = "Relic";
         [SerializeField] private float rotateSpeed = 60f;
         [SerializeField] private float bobHeight = 0.25f;
         [SerializeField] private float bobFrequency = 2f;

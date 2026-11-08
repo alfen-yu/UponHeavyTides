@@ -92,6 +92,8 @@ namespace UponHeavyTides.Editor
                 player.transform.position = new Vector3(0f, 1f, -32f);
                 player.transform.rotation = Quaternion.identity;
                 player.tag = "Player";
+                if (player.GetComponent<PlayerMovement>() == null) player.AddComponent<PlayerMovement>();
+                if (player.GetComponent<PlayerPusher>() == null) player.AddComponent<PlayerPusher>();
             }
 
             // 9. Camera Tracker Setup
@@ -99,15 +101,14 @@ namespace UponHeavyTides.Editor
             if (mainCam != null && player != null)
             {
                 var tracker = mainCam.GetComponent<CameraTracker>();
-                if (tracker != null)
-                {
-                    tracker.target = player.transform;
-                    tracker.offset = new Vector3(0f, 4.5f, -7.5f);
-                }
+                if (tracker == null) tracker = mainCam.AddComponent<CameraTracker>();
+                tracker.target = player.transform;
+                tracker.distance = 7.5f;
+                tracker.height = 4.5f;
                 mainCam.transform.position = player.transform.position + new Vector3(0f, 4.5f, -7.5f);
             }
 
-            // 10. Crab Companion & Intro Interaction
+            // 10. Crab Companion & Intro Interaction (Stays Waiting at Shelter Rock until found)
             GameObject crab = GameObject.Find("Crab");
             if (crab == null)
             {
@@ -120,6 +121,7 @@ namespace UponHeavyTides.Editor
 
             var companion = crab.GetComponent<Companion>();
             if (companion == null) companion = crab.AddComponent<Companion>();
+            companion.SetWaiting(true);
 
             // Setup Crab Intro Dialogue
             var crabDiag = crab.GetComponent<DialogueTrigger>();
@@ -138,13 +140,16 @@ namespace UponHeavyTides.Editor
             // 11. Elder Sea Turtle Sanctuary
             BuildElderSeaTurtle(npcsRoot.transform, matTurtleShell, matTurtleSkin, matRock, matCoralTeal);
 
-            // 12. Tutorial Obstacles: Jump Steps & Pushable Boulders
+            // 12. School of Fish NPC Group
+            BuildSchoolOfFish(npcsRoot.transform, matRelicPearl, matCoralTeal);
+
+            // 13. Tutorial Obstacles: Jump Steps & Pushable Boulders
             BuildTutorialCourse(tutorialRoot.transform, matRock, matSand);
 
-            // 13. Exploration Relics (Sprinkled collectibles for non-linear play)
+            // 14. Exploration Relics (Sprinkled collectibles for exploration)
             BuildExplorationRelics(relicsRoot.transform, matRelicPearl, matSeaFlower);
 
-            // 14. Culmination: Final Boulder & Giant Sucker Scar
+            // 15. Culmination: Final Boulder & Giant Sucker Scar
             BuildFinalTrialAndSuckerScar(culminationRoot.transform, matRock, matSuckerScar, matHookBarbs);
 
             // Clean up old standalone Rock from initial scene
@@ -154,7 +159,7 @@ namespace UponHeavyTides.Editor
                 Undo.DestroyObjectImmediate(oldRock);
             }
 
-            // 15. Bake Navigation Mesh
+            // 16. Bake Navigation Mesh
             navSurface.BuildNavMesh();
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -203,6 +208,20 @@ namespace UponHeavyTides.Editor
             trigger.AddLine("Crab Companion", "By the Great Tides... you're not from the ocean! You're the creature from above!", new Color(1f, 0.65f, 0.3f));
             trigger.AddLine("Crab Companion", "A monster from the deep has stolen our world's light. Our kingdom is drowning in fear...", new Color(1f, 0.65f, 0.3f));
             trigger.AddLine("Crab Companion", "Follow me to the Elder Sea Turtle! He has guarded the ancient prophecy for generations!", new Color(1f, 0.65f, 0.3f));
+
+            trigger.onDialogueFinished = new UnityEngine.Events.UnityEvent();
+            trigger.onDialogueFinished.AddListener(() =>
+            {
+                var comp = GameObject.Find("Crab")?.GetComponent<Companion>();
+                if (comp != null)
+                {
+                    comp.LeadTowards(new Vector3(0f, 0.4f, -7.5f));
+                }
+                if (Level0Controller.Instance != null)
+                {
+                    Level0Controller.Instance.UpdateObjective("Follow the Crab Companion to the Elder Sea Turtle sanctuary.");
+                }
+            });
         }
 
         private static void BuildElderSeaTurtle(Transform parent, Material matShell, Material matSkin, Material matRock, Material matCoral)
@@ -254,7 +273,7 @@ namespace UponHeavyTides.Editor
             head.transform.localScale = new Vector3(1.2f, 0.9f, 1.4f);
             head.GetComponent<MeshRenderer>().sharedMaterial = matSkin;
 
-            // Front Left Flipper
+            // Flippers
             GameObject flLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
             flLeft.name = "Flipper_Front_Left";
             flLeft.transform.SetParent(turtleObj.transform);
@@ -263,7 +282,6 @@ namespace UponHeavyTides.Editor
             flLeft.transform.localRotation = Quaternion.Euler(0f, -30f, 15f);
             flLeft.GetComponent<MeshRenderer>().sharedMaterial = matSkin;
 
-            // Front Right Flipper
             GameObject flRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
             flRight.name = "Flipper_Front_Right";
             flRight.transform.SetParent(turtleObj.transform);
@@ -277,15 +295,71 @@ namespace UponHeavyTides.Editor
             diag.AddLine("Elder Sea Turtle", "Welcome, traveler of the surface. It was foretold that a creature from above would descend when our world's light began to fade.", new Color(0.35f, 0.85f, 0.75f));
             diag.AddLine("Elder Sea Turtle", "A colossal monster haunts the deepest trenches. It drains the life from our corals and the color from our tides.", new Color(0.35f, 0.85f, 0.75f));
             diag.AddLine("Elder Sea Turtle", "I appoint this young crab to be your guide and companion. He shall teach you the way of the water—to stride across the ocean bed, leap through currents, and shift heavy stones.", new Color(0.35f, 0.85f, 0.75f));
-            diag.AddLine("Crab Companion", "It is an honor, Elder! Come, traveler! Use [WASD] to walk and [SPACE] to leap over the coral ridges. Push any stones in your way!", new Color(1f, 0.65f, 0.3f));
+            diag.AddLine("Crab Companion", "It is an honor, Elder! Listen closely, traveler: Press [SPACE] to leap over coral ridges. Press [A] to turn the camera right, and [D] to turn the camera left. Move in any direction using the [ARROW KEYS]: Up Arrow for forward, Down Arrow for backward, and Left/Right Arrows to steer.", new Color(1f, 0.65f, 0.3f));
             diag.AddLine("Elder Sea Turtle", "Seek the gateway at the end of the shallows. The monster left a mark upon the stone... uncover it!", new Color(0.35f, 0.85f, 0.75f));
+
+            diag.onDialogueFinished = new UnityEngine.Events.UnityEvent();
+            diag.onDialogueFinished.AddListener(() =>
+            {
+                var comp = GameObject.Find("Crab")?.GetComponent<Companion>();
+                if (comp != null)
+                {
+                    comp.FollowPlayer();
+                }
+                if (Level0Controller.Instance != null)
+                {
+                    Level0Controller.Instance.OnElderTurtleMet();
+                }
+            });
+        }
+
+        private static void BuildSchoolOfFish(Transform parent, Material matFish, Material matGlow)
+        {
+            GameObject schoolGroup = new GameObject("School_Of_Fish_NPC");
+            schoolGroup.transform.SetParent(parent);
+            schoolGroup.transform.position = new Vector3(12f, 1.8f, 6f);
+            schoolGroup.AddComponent<FishSchoolAnimator>();
+
+            // 7 colorful fish swimming in gentle formation
+            Vector3[] offsets = new Vector3[]
+            {
+                new Vector3(0f, 0f, 0f),
+                new Vector3(-1.2f, 0.3f, -0.8f),
+                new Vector3(1.2f, -0.2f, -0.8f),
+                new Vector3(-2.0f, -0.3f, -1.8f),
+                new Vector3(2.0f, 0.4f, -1.8f),
+                new Vector3(-0.6f, 0.6f, -1.4f),
+                new Vector3(0.6f, -0.5f, -1.4f)
+            };
+
+            for (int i = 0; i < offsets.Length; i++)
+            {
+                GameObject fish = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                fish.name = $"FishMember_{i}";
+                fish.transform.SetParent(schoolGroup.transform);
+                fish.transform.localPosition = offsets[i];
+                fish.transform.localRotation = Quaternion.Euler(0f, 25f, 90f);
+                fish.transform.localScale = new Vector3(0.2f, 0.5f, 0.2f);
+                fish.GetComponent<MeshRenderer>().sharedMaterial = (i % 2 == 0) ? matFish : matGlow;
+            }
+
+            // Proximity interaction trigger
+            var col = schoolGroup.AddComponent<SphereCollider>();
+            col.isTrigger = true;
+            col.radius = 4.5f;
+
+            var diag = schoolGroup.AddComponent<DialogueTrigger>();
+            diag.AddLine("School of Fish", "Greetings, surface traveler! We are the School of the Shallows.", new Color(0.2f, 0.9f, 1f));
+            diag.AddLine("School of Fish", "The currents have grown cold and dark since the monster of the deep awoke... but your presence brings new hope to our waters!", new Color(0.2f, 0.9f, 1f));
+            diag.AddLine("School of Fish", "Whenever you journey through the perils of the sea, we promise to guide your path, illuminate dark crevices, and assist you in whatever way we can!", new Color(0.2f, 0.9f, 1f));
+            diag.AddLine("Crab Companion", "Thank you, friends! The ancient gateway is just ahead past the coral ridge. Let's push aside the great boulder to reveal the monster's mark!", new Color(1f, 0.65f, 0.3f));
 
             diag.onDialogueFinished = new UnityEngine.Events.UnityEvent();
             diag.onDialogueFinished.AddListener(() =>
             {
                 if (Level0Controller.Instance != null)
                 {
-                    Level0Controller.Instance.OnElderTurtleMet();
+                    Level0Controller.Instance.UpdateObjective("The Final Trial: Head to the far gateway and push aside the heavy boulder to reveal the monster's mark!");
                 }
             });
         }
@@ -295,48 +369,72 @@ namespace UponHeavyTides.Editor
             GameObject course = new GameObject("Tutorial_Movement_And_Push_Course");
             course.transform.SetParent(parent);
 
-            // 1. Stepping stone sandbars / jump platforms
+            // Stepping stone sandbars / jump platforms
             CreateJumpPlatform(course.transform, new Vector3(0f, 0.5f, 0f), new Vector3(5f, 0.8f, 4f), matRock, "StepPlatform_1");
             CreateJumpPlatform(course.transform, new Vector3(-1.5f, 1.0f, 5f), new Vector3(4f, 1.6f, 3.5f), matRock, "StepPlatform_2");
-            CreateJumpPlatform(course.transform, new Vector3(1.5f, 1.5f, 10f), new Vector3(4.5f, 2.4f, 4f), matRock, "StepPlatform_3");
+            CreateJumpPlatform(course.transform, new Vector3(1.5f, 1.5f, 10f), new Vector3(4.5f, 2.2f, 4f), matRock, "StepPlatform_3");
 
-            // 2. Pushable tutorial rocks along the route
-            CreatePushableStone(course.transform, new Vector3(1.8f, 0.6f, -3f), new Vector3(1.2f, 1.2f, 1.2f), 3f, matRock, "Pushable_Stone_1");
-            CreatePushableStone(course.transform, new Vector3(-3.0f, 0.7f, 4f), new Vector3(1.4f, 1.4f, 1.4f), 4f, matRock, "Pushable_Stone_2");
-            CreatePushableStone(course.transform, new Vector3(2.5f, 0.8f, 13f), new Vector3(1.5f, 1.5f, 1.5f), 4.5f, matRock, "Pushable_Stone_3");
-            CreatePushableStone(course.transform, new Vector3(-1.0f, 0.9f, 20f), new Vector3(1.8f, 1.8f, 1.8f), 5f, matRock, "Pushable_Stone_4");
+            // Tutorial Pushable Stones (Teaching pushing mechanic)
+            CreatePushableStone(course.transform, new Vector3(-2.5f, 0.6f, 15f), new Vector3(1.2f, 1.2f, 1.2f), 2.5f, matRock, "Pushable_Stone_A");
+            CreatePushableStone(course.transform, new Vector3(2.5f, 0.7f, 19f), new Vector3(1.4f, 1.4f, 1.4f), 3.0f, matRock, "Pushable_Stone_B");
+        }
+
+        private static void CreateJumpPlatform(Transform parent, Vector3 pos, Vector3 scale, Material mat, string name)
+        {
+            GameObject platform = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            platform.name = name;
+            platform.transform.SetParent(parent);
+            platform.transform.position = pos;
+            platform.transform.localScale = scale;
+            platform.GetComponent<MeshRenderer>().sharedMaterial = mat;
+        }
+
+        private static void CreatePushableStone(Transform parent, Vector3 pos, Vector3 scale, float mass, Material mat, string name)
+        {
+            GameObject stone = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            stone.name = name;
+            stone.transform.SetParent(parent);
+            stone.transform.position = pos;
+            stone.transform.localScale = scale;
+            stone.GetComponent<MeshRenderer>().sharedMaterial = mat;
+
+            Rigidbody rb = stone.AddComponent<Rigidbody>();
+            rb.mass = mass;
+            rb.linearDamping = 1.0f;
+            rb.angularDamping = 1.5f;
+            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+            stone.AddComponent<Pushable>();
         }
 
         private static void BuildExplorationRelics(Transform parent, Material matPearl, Material matFlower)
         {
-            GameObject relicsGroup = new GameObject("Shallows_Sprinkled_Relics");
-            relicsGroup.transform.SetParent(parent);
-
-            var relicPositions = new (Vector3 pos, string name)[]
+            Vector3[] relicSpots = new Vector3[]
             {
-                (new Vector3(-20f, 1.2f, -16f), "Sunlit Pearl of the West"),
-                (new Vector3(18f, 1.2f, -14f), "Golden Conch Shell"),
-                (new Vector3(-15f, 3.2f, 8f), "Iridescent Reef Crystal"),
-                (new Vector3(20f, 1.2f, 15f), "Ancient Nautilus Relic"),
-                (new Vector3(-10f, 1.5f, 24f), "Prismatic Sea Star")
+                new Vector3(-16f, 0.8f, -22f),
+                new Vector3(16f, 0.8f, -18f),
+                new Vector3(-20f, 0.8f, 2f),
+                new Vector3(20f, 0.8f, 8f),
+                new Vector3(-14f, 0.8f, 22f)
             };
 
-            foreach (var r in relicPositions)
+            for (int i = 0; i < relicSpots.Length; i++)
             {
                 GameObject relic = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                relic.name = r.name;
-                relic.transform.SetParent(relicsGroup.transform);
-                relic.transform.position = r.pos;
-                relic.transform.localScale = new Vector3(0.85f, 0.85f, 0.85f);
+                relic.name = $"Relic_Pearl_{i + 1}";
+                relic.transform.SetParent(parent);
+                relic.transform.position = relicSpots[i];
+                relic.transform.localScale = new Vector3(0.7f, 0.7f, 0.7f);
                 relic.GetComponent<MeshRenderer>().sharedMaterial = matPearl;
                 relic.GetComponent<Collider>().isTrigger = true;
 
-                // Add CollectibleItem script
-                var item = relic.AddComponent<CollectibleItem>();
+                var comp = relic.AddComponent<CollectibleItem>();
+                comp.itemIdentifier = $"Relic_{i + 1}";
+                comp.itemName = "Sunlit Pearl";
 
-                // Pedestal / coral mound underneath
+                // Visual coral base pedestal
                 GameObject ped = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                ped.name = $"{r.name}_Pedestal";
+                ped.name = "Pedestal";
                 ped.transform.SetParent(relic.transform);
                 ped.transform.localPosition = new Vector3(0f, -0.7f, 0f);
                 ped.transform.localScale = new Vector3(1.2f, 0.3f, 1.2f);
@@ -387,7 +485,7 @@ namespace UponHeavyTides.Editor
             suckerDisc.transform.SetParent(scarWall.transform);
             suckerDisc.transform.localPosition = new Vector3(0f, 0f, -0.55f);
             suckerDisc.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            suckerDisc.transform.localScale = new Vector3(0.55f, 0.05f, 0.55f); // ~3.5m in world scale
+            suckerDisc.transform.localScale = new Vector3(0.55f, 0.05f, 0.55f);
             suckerDisc.GetComponent<MeshRenderer>().sharedMaterial = matScar;
 
             // Swiveling Hook Barbs around the sucker rim
@@ -405,26 +503,29 @@ namespace UponHeavyTides.Editor
 
             // The Final Heavy Boulder (Blocking the scar)
             GameObject finalBoulder = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            finalBoulder.name = "Final_Trial_Boulder";
+            finalBoulder.name = "FinalBoulder";
             finalBoulder.transform.SetParent(gateGroup.transform);
-            finalBoulder.transform.localPosition = new Vector3(0f, 1.4f, 1.5f);
+            finalBoulder.transform.localPosition = new Vector3(0f, 1.4f, 1.2f);
             finalBoulder.transform.localScale = new Vector3(2.8f, 2.8f, 2.8f);
-            finalBoulder.transform.rotation = Quaternion.Euler(10f, 20f, 15f);
+            finalBoulder.transform.rotation = Quaternion.Euler(0f, 15f, 0f);
             finalBoulder.GetComponent<MeshRenderer>().sharedMaterial = matRock;
 
             Rigidbody rb = finalBoulder.AddComponent<Rigidbody>();
-            rb.mass = 8f;
-            rb.linearDamping = 1.4f;
+            rb.mass = 4.5f;
+            rb.linearDamping = 1.0f;
             rb.angularDamping = 1.5f;
+            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
             finalBoulder.AddComponent<Pushable>();
 
-            // Trigger on the scar wall for discovery
-            var triggerCollider = scarWall.AddComponent<BoxCollider>();
+            // Dedicated Discovery Zone trigger encompassing the front of the carving and the boulder
+            GameObject discoveryZone = new GameObject("ClueDiscoveryZone");
+            discoveryZone.transform.SetParent(gateGroup.transform);
+            discoveryZone.transform.localPosition = new Vector3(0f, 1.5f, 1.5f);
+            var triggerCollider = discoveryZone.AddComponent<BoxCollider>();
             triggerCollider.isTrigger = true;
-            triggerCollider.size = new Vector3(1.2f, 1.2f, 4.0f); // Expands in front
+            triggerCollider.size = new Vector3(8f, 4f, 8f);
 
-            var clueComp = scarWall.AddComponent<ClueDiscoveryTrigger>();
-            // Wire blocking boulder via Reflection or public field
+            var clueComp = discoveryZone.AddComponent<ClueDiscoveryTrigger>();
             var field = typeof(ClueDiscoveryTrigger).GetField("blockingBoulder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (field != null) field.SetValue(clueComp, finalBoulder.transform);
         }
@@ -438,166 +539,73 @@ namespace UponHeavyTides.Editor
             float height = 12f;
             float thickness = 4f;
 
-            // South Wall (Behind spawn)
             CreateReefWall(cliffs.transform, new Vector3(0f, height / 2, -halfSize), new Vector3(76f, height, thickness), matRock);
-            // West Wall
             CreateReefWall(cliffs.transform, new Vector3(-halfSize, height / 2, 0f), new Vector3(thickness, height, 76f), matRock);
-            // East Wall
             CreateReefWall(cliffs.transform, new Vector3(halfSize, height / 2, 0f), new Vector3(thickness, height, 76f), matRock);
-            // North Wall (Flanks the exit gateway)
             CreateReefWall(cliffs.transform, new Vector3(-20f, height / 2, halfSize), new Vector3(36f, height, thickness), matRock);
             CreateReefWall(cliffs.transform, new Vector3(20f, height / 2, halfSize), new Vector3(36f, height, thickness), matRock);
-        }
-
-        private static void BuildLivelyFlora(Transform parent, Material matPink, Material matOrange, Material matTeal, Material matPurple, Material matSeaweed, Material matFlower, Material matRock)
-        {
-            GameObject floraRoot = new GameObject("Shallows_Flora_And_Corals");
-            floraRoot.transform.SetParent(parent);
-
-            // 1. Coral Garden Formations (8 distinct coral mounds across the map)
-            var coralCenters = new Vector3[]
-            {
-                new Vector3(-12f, 0f, -22f),
-                new Vector3(14f, 0f, -24f),
-                new Vector3(-18f, 0f, -6f),
-                new Vector3(16f, 0f, -4f),
-                new Vector3(-12f, 0f, 12f),
-                new Vector3(15f, 0f, 10f),
-                new Vector3(-8f, 0f, 24f),
-                new Vector3(10f, 0f, 22f)
-            };
-
-            Material[] coralMats = new Material[] { matPink, matOrange, matTeal, matPurple };
-
-            for (int i = 0; i < coralCenters.Length; i++)
-            {
-                GameObject cluster = new GameObject($"CoralGarden_{i}");
-                cluster.transform.SetParent(floraRoot.transform);
-                cluster.transform.position = coralCenters[i];
-
-                // Rock base
-                GameObject mound = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                mound.name = "Reef_Base";
-                mound.transform.SetParent(cluster.transform);
-                mound.transform.localPosition = new Vector3(0f, 0.4f, 0f);
-                mound.transform.localScale = new Vector3(3.5f, 1.2f, 3.5f);
-                mound.GetComponent<MeshRenderer>().sharedMaterial = matRock;
-
-                // Branching corals & Pipe corals
-                for (int c = 0; c < 7; c++)
-                {
-                    float ang = (c / 7f) * Mathf.PI * 2f;
-                    Vector3 coralPos = new Vector3(Mathf.Cos(ang) * 1.3f, 1.2f, Mathf.Sin(ang) * 1.3f);
-
-                    GameObject coralBranch = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                    coralBranch.name = $"Coral_Branch_{c}";
-                    coralBranch.transform.SetParent(cluster.transform);
-                    coralBranch.transform.localPosition = coralPos;
-
-                    float h = 1.2f + (c % 3) * 0.5f;
-                    coralBranch.transform.localScale = new Vector3(0.35f, h, 0.35f);
-                    coralBranch.transform.localRotation = Quaternion.Euler(Mathf.Sin(c) * 15f, c * 40f, Mathf.Cos(c) * 15f);
-                    coralBranch.GetComponent<MeshRenderer>().sharedMaterial = coralMats[(i + c) % coralMats.Length];
-                }
-
-                // Table coral canopy
-                GameObject table = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                table.name = "Table_Coral_Plate";
-                table.transform.SetParent(cluster.transform);
-                table.transform.localPosition = new Vector3(0f, 2.2f, 0f);
-                table.transform.localScale = new Vector3(2.2f, 0.12f, 2.2f);
-                table.GetComponent<MeshRenderer>().sharedMaterial = coralMats[i % coralMats.Length];
-            }
-
-            // 2. Swaying Seaweed & Sea Anemone Flower Beds
-            for (int s = 0; s < 12; s++)
-            {
-                float x = Mathf.Sin(s * 1.7f) * 26f;
-                float z = Mathf.Cos(s * 1.3f) * 26f;
-                Vector3 bedPos = new Vector3(x, 0f, z);
-
-                GameObject bed = new GameObject($"SeaweedBed_{s}");
-                bed.transform.SetParent(floraRoot.transform);
-                bed.transform.position = bedPos;
-
-                // Seaweed stalks
-                for (int w = 0; w < 5; w++)
-                {
-                    float ang = (w / 5f) * Mathf.PI * 2f;
-                    Vector3 weedPos = new Vector3(Mathf.Cos(ang) * 0.8f, 1.8f, Mathf.Sin(ang) * 0.8f);
-
-                    GameObject stalk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                    stalk.name = $"WeedStalk_{w}";
-                    stalk.transform.SetParent(bed.transform);
-                    stalk.transform.localPosition = weedPos;
-                    stalk.transform.localScale = new Vector3(0.18f, 2.2f, 0.18f);
-                    stalk.transform.localRotation = Quaternion.Euler(Mathf.Sin(w) * 10f, w * 45f, 0f);
-                    stalk.GetComponent<MeshRenderer>().sharedMaterial = matSeaweed;
-                }
-
-                // Sea Flower (Anemone)
-                GameObject flower = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                flower.name = "Sea_Anemone_Flower";
-                flower.transform.SetParent(bed.transform);
-                flower.transform.localPosition = new Vector3(0f, 0.4f, 0f);
-                flower.transform.localScale = new Vector3(0.9f, 0.5f, 0.9f);
-                flower.GetComponent<MeshRenderer>().sharedMaterial = matFlower;
-            }
         }
 
         private static void CreateReefWall(Transform parent, Vector3 pos, Vector3 scale, Material mat)
         {
             GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            wall.name = "Cliff_Reef_Wall";
             wall.transform.SetParent(parent);
             wall.transform.position = pos;
             wall.transform.localScale = scale;
-            if (mat != null) wall.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            wall.GetComponent<MeshRenderer>().sharedMaterial = mat;
         }
 
-        private static void CreateJumpPlatform(Transform parent, Vector3 pos, Vector3 scale, Material mat, string name)
+        private static void BuildLivelyFlora(Transform parent, Material matCoralPink, Material matCoralOrange, Material matCoralTeal, Material matCoralPurple, Material matSeaweed, Material matSeaFlower, Material matRock)
         {
-            GameObject plat = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            plat.name = name;
-            plat.transform.SetParent(parent);
-            plat.transform.position = pos;
-            plat.transform.localScale = scale;
-            plat.GetComponent<MeshRenderer>().sharedMaterial = mat;
-        }
+            GameObject floraRoot = new GameObject("Lively_Reef_Flora");
+            floraRoot.transform.SetParent(parent);
 
-        private static void CreatePushableStone(Transform parent, Vector3 pos, Vector3 scale, float mass, Material mat, string name)
-        {
-            GameObject stone = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            stone.name = name;
-            stone.transform.SetParent(parent);
-            stone.transform.position = pos;
-            stone.transform.localScale = scale;
-            stone.transform.rotation = Quaternion.Euler(Random.Range(5f, 20f), Random.Range(0f, 180f), Random.Range(5f, 20f));
-            stone.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            Material[] coralMats = new Material[] { matCoralPink, matCoralOrange, matCoralTeal, matCoralPurple };
 
-            Rigidbody rb = stone.AddComponent<Rigidbody>();
-            rb.mass = mass;
-            rb.linearDamping = 1.2f;
-            rb.angularDamping = 1.4f;
-            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-
-            stone.AddComponent<Pushable>();
-        }
-
-        private static Material GetOrCreateMaterial(string matName, Color color, float smoothness, float metallic)
-        {
-            string path = $"{MaterialsFolder}/{matName}.mat";
-            Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (mat == null)
+            // Rich Coral mounds
+            for (int i = 0; i < 24; i++)
             {
-                Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
-                mat = new Material(litShader);
-                mat.SetColor("_BaseColor", color);
-                mat.SetFloat("_Smoothness", smoothness);
-                mat.SetFloat("_Metallic", metallic);
-                AssetDatabase.CreateAsset(mat, path);
+                float x = ((i * 17) % 56) - 28f;
+                float z = ((i * 23) % 56) - 28f;
+                if (Mathf.Abs(x) < 4f && Mathf.Abs(z + 10f) < 8f) continue; // Clear path around sanctuary
+
+                GameObject coral = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                coral.name = $"Coral_Mound_{i}";
+                coral.transform.SetParent(floraRoot.transform);
+                coral.transform.position = new Vector3(x, 0.4f, z);
+                coral.transform.localScale = new Vector3(Random.Range(1.5f, 3.2f), Random.Range(1.0f, 2.5f), Random.Range(1.5f, 3.2f));
+                coral.GetComponent<MeshRenderer>().sharedMaterial = coralMats[i % coralMats.Length];
             }
-            return mat;
+
+            // Swaying Seaweed Stalks
+            for (int s = 0; s < 36; s++)
+            {
+                float x = ((s * 13) % 64) - 32f;
+                float z = ((s * 19) % 64) - 32f;
+
+                GameObject weed = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                weed.name = $"Seaweed_{s}";
+                weed.transform.SetParent(floraRoot.transform);
+                float h = Random.Range(2.5f, 4.5f);
+                weed.transform.position = new Vector3(x, h / 2f, z);
+                weed.transform.localScale = new Vector3(0.2f, h / 2f, 0.2f);
+                weed.transform.rotation = Quaternion.Euler(Random.Range(-8f, 8f), Random.Range(0f, 360f), Random.Range(-8f, 8f));
+                weed.GetComponent<MeshRenderer>().sharedMaterial = matSeaweed;
+            }
+
+            // Vibrant Sea Flowers
+            for (int f = 0; f < 18; f++)
+            {
+                float x = ((f * 11) % 50) - 25f;
+                float z = ((f * 29) % 50) - 25f;
+
+                GameObject flower = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                flower.name = $"SeaFlower_{f}";
+                flower.transform.SetParent(floraRoot.transform);
+                flower.transform.position = new Vector3(x, 0.35f, z);
+                flower.transform.localScale = new Vector3(0.7f, 0.5f, 0.7f);
+                flower.GetComponent<MeshRenderer>().sharedMaterial = matSeaFlower;
+            }
         }
 
         private static GameObject GetOrCreateRoot(string name)
@@ -611,13 +619,44 @@ namespace UponHeavyTides.Editor
             return obj;
         }
 
-        private static void ClearChildren(GameObject parent)
+        private static void ClearChildren(GameObject obj)
         {
-            int childCount = parent.transform.childCount;
-            for (int i = childCount - 1; i >= 0; i--)
+            var children = new List<GameObject>();
+            foreach (Transform child in obj.transform)
             {
-                Undo.DestroyObjectImmediate(parent.transform.GetChild(i).gameObject);
+                children.Add(child.gameObject);
             }
+            foreach (var child in children)
+            {
+                Undo.DestroyObjectImmediate(child);
+            }
+        }
+
+        private static Material GetOrCreateMaterial(string name, Color color, float metallic = 0f, float smoothness = 0.5f, bool transparent = false)
+        {
+            string path = $"{MaterialsFolder}/{name}.mat";
+            Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null) shader = Shader.Find("Standard");
+                mat = new Material(shader) { name = name };
+
+                if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
+                else if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
+
+                if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", metallic);
+                if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", smoothness);
+
+                if (transparent)
+                {
+                    mat.SetFloat("_Surface", 1);
+                    mat.renderQueue = 3000;
+                }
+
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            return mat;
         }
     }
 }
