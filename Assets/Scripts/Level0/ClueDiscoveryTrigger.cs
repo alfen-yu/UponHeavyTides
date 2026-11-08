@@ -12,7 +12,7 @@ namespace UponHeavyTides.Level0
 
         [Header("Blocking Rock Check")]
         [SerializeField] private Transform blockingBoulder;
-        [SerializeField] private float requiredClearDistance = 2.2f;
+        [SerializeField] private float requiredClearDistance = 1.8f;
 
         private bool hasDiscovered = false;
         private Vector3 initialBoulderPos;
@@ -91,6 +91,11 @@ namespace UponHeavyTides.Level0
             hasDiscovered = true;
 
             Debug.Log("[Upon Heavy Tides] Monster Clue Revealed behind the boulder!");
+
+            if (Level0StoryFlow.Instance != null)
+            {
+                Level0StoryFlow.Instance.OnClueRevealed();
+            }
 
             if (Level0Controller.Instance != null)
             {

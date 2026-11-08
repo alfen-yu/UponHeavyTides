@@ -9,9 +9,9 @@ namespace UponHeavyTides.Level0
     {
         [Header("Dialogue Configuration")]
         [SerializeField] private List<DialogueLine> dialogueLines = new List<DialogueLine>();
-        [SerializeField] private bool triggerOnEnter = false;
-        [SerializeField] private bool triggerOnlyOnce = true;
-        [SerializeField] private float interactRadius = 3f;
+        [SerializeField] public bool triggerOnEnter = false;
+        [SerializeField] public bool triggerOnlyOnce = true;
+        [SerializeField] public float interactRadius = 4.5f;
 
         [Header("Events")]
         public UnityEvent onDialogueFinished;
@@ -19,6 +19,10 @@ namespace UponHeavyTides.Level0
         private bool hasTriggered = false;
         private bool playerInRange = false;
         private Transform playerTransform;
+
+        private static float lastDialogueEndTime = -10f;
+
+        public bool HasTriggered => hasTriggered;
 
         private void Start()
         {
@@ -28,35 +32,43 @@ namespace UponHeavyTides.Level0
 
         private void Update()
         {
+            if (hasTriggered && triggerOnlyOnce) return;
             if (triggerOnEnter) return;
-            if (triggerOnlyOnce && hasTriggered) return;
 
-            if (playerTransform != null)
+            // Prevent re-triggering immediately when another dialogue just ended
+            if (Time.time < lastDialogueEndTime + 0.8f) return;
+
+            if (playerTransform == null)
             {
-                float dist = Vector3.Distance(transform.position, playerTransform.position);
-                playerInRange = dist <= interactRadius;
+                var p = GameObject.FindGameObjectWithTag("Player");
+                if (p != null) playerTransform = p.transform;
+                if (playerTransform == null) return;
+            }
 
-                bool interactPressed = false;
-                var keyboard = Keyboard.current;
-                if (keyboard != null)
-                {
-                    interactPressed = keyboard.eKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame;
-                }
+            float dist = Vector3.Distance(transform.position, playerTransform.position);
+            playerInRange = dist <= interactRadius;
 
-                if (playerInRange && interactPressed)
+            bool interactPressed = false;
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                interactPressed = keyboard.eKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame;
+            }
+
+            if (playerInRange && interactPressed)
+            {
+                if (DialogueManager.Instance != null && !DialogueManager.Instance.IsDialogueActive)
                 {
-                    if (DialogueManager.Instance != null && !DialogueManager.Instance.IsDialogueActive)
-                    {
-                        TriggerDialogue();
-                    }
+                    TriggerDialogue();
                 }
             }
         }
 
         private void OnTriggerEnter(Collider other)
         {
+            if (hasTriggered && triggerOnlyOnce) return;
             if (!triggerOnEnter) return;
-            if (triggerOnlyOnce && hasTriggered) return;
+            if (Time.time < lastDialogueEndTime + 0.8f) return;
 
             if (other.CompareTag("Player") || other.GetComponent<UponHeavyTides.Player.PlayerMovement>() != null)
             {
@@ -73,14 +85,31 @@ namespace UponHeavyTides.Level0
             {
                 DialogueManager.Instance.StartDialogue(dialogueLines, () =>
                 {
+                    lastDialogueEndTime = Time.time;
                     onDialogueFinished?.Invoke();
+
+                    if (triggerOnlyOnce)
+                    {
+                        enabled = false;
+                    }
                 });
             }
+        }
+
+        public void ClearLines()
+        {
+            dialogueLines.Clear();
         }
 
         public void AddLine(string speaker, string text, Color color)
         {
             dialogueLines.Add(new DialogueLine { speakerName = speaker, text = text, speakerColor = color });
+        }
+
+        public void ResetTrigger()
+        {
+            hasTriggered = false;
+            enabled = true;
         }
     }
 }

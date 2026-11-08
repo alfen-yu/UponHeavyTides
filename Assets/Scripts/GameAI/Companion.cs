@@ -17,15 +17,14 @@ namespace UponHeavyTides.AI
         [SerializeField] private CompanionMode currentMode = CompanionMode.WaitingForPlayer;
         [SerializeField] private Transform target;
         [SerializeField] private float followDistance = 2.5f;
-        [SerializeField] private float moveSpeed = 3.8f;
-        [SerializeField] private float updateInterval = 0.2f;
+        [SerializeField] private float moveSpeed = 4.2f;
 
         [Header("Leading Destination")]
         [SerializeField] private Vector3 leadDestination;
         private Action onArrivedAtDestination;
 
         private NavMeshAgent agent;
-        private float nextUpdateTime = 0f;
+        private float pathRecalcTimer = 0f;
 
         public CompanionMode CurrentMode => currentMode;
 
@@ -36,10 +35,16 @@ namespace UponHeavyTides.AI
             {
                 agent.stoppingDistance = followDistance;
                 agent.speed = moveSpeed;
+                agent.acceleration = 12f;
             }
         }
 
         private void Start()
+        {
+            FindPlayer();
+        }
+
+        private void FindPlayer()
         {
             if (target == null)
             {
@@ -65,15 +70,22 @@ namespace UponHeavyTides.AI
             leadDestination = destination;
             onArrivedAtDestination = onArrive;
             currentMode = CompanionMode.LeadingToTarget;
+
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = false;
+                agent.SetDestination(destination);
+            }
         }
 
         public void FollowPlayer()
         {
             currentMode = CompanionMode.FollowingPlayer;
-            if (target == null)
+            FindPlayer();
+
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
-                var player = GameObject.FindGameObjectWithTag("Player");
-                if (player != null) target = player.transform;
+                agent.isStopped = false;
             }
         }
 
@@ -81,33 +93,49 @@ namespace UponHeavyTides.AI
         {
             if (currentMode == CompanionMode.WaitingForPlayer) return;
 
-            if (Time.time < nextUpdateTime) return;
-            nextUpdateTime = Time.time + updateInterval;
-
             if (currentMode == CompanionMode.LeadingToTarget)
             {
-                MoveTowardsPoint(leadDestination);
                 float distToDest = Vector3.Distance(transform.position, leadDestination);
-                if (distToDest <= 3.0f)
+                if (distToDest > 2.0f)
                 {
+                    MoveTowardsPoint(leadDestination);
+                }
+                else
+                {
+                    if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+                    {
+                        agent.ResetPath();
+                    }
+
                     var callback = onArrivedAtDestination;
                     onArrivedAtDestination = null;
                     callback?.Invoke();
+
+                    // Face forward into the sanctuary
+                    Vector3 lookDir = (leadDestination - transform.position);
+                    lookDir.y = 0;
+                    if (lookDir.sqrMagnitude > 0.01f)
+                    {
+                        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(lookDir), 5f * Time.deltaTime);
+                    }
                 }
             }
             else if (currentMode == CompanionMode.FollowingPlayer)
             {
                 if (target == null)
                 {
-                    var player = GameObject.FindGameObjectWithTag("Player");
-                    if (player != null) target = player.transform;
-                    return;
+                    FindPlayer();
+                    if (target == null) return;
                 }
 
                 float distToPlayer = Vector3.Distance(transform.position, target.position);
                 if (distToPlayer > followDistance)
                 {
                     MoveTowardsPoint(target.position);
+                }
+                else if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+                {
+                    agent.ResetPath();
                 }
             }
         }
@@ -116,18 +144,23 @@ namespace UponHeavyTides.AI
         {
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
-                agent.SetDestination(point);
+                pathRecalcTimer -= Time.deltaTime;
+                if (pathRecalcTimer <= 0f)
+                {
+                    pathRecalcTimer = 0.25f;
+                    agent.SetDestination(point);
+                }
             }
             else
             {
-                // Fallback smooth steering when navmesh is not loaded
+                // Smooth frame-by-frame fallback movement
                 Vector3 dir = (point - transform.position);
-                dir.y = 0;
-                if (dir.sqrMagnitude > 0.5f)
+                dir.y = 0f;
+                if (dir.sqrMagnitude > 0.05f)
                 {
                     dir.Normalize();
-                    transform.position += dir * (moveSpeed * Time.deltaTime * 3.5f);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), 6f * Time.deltaTime * 3.5f);
+                    transform.position += dir * (moveSpeed * Time.deltaTime);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(dir), 8f * Time.deltaTime);
                 }
             }
         }

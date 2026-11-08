@@ -200,28 +200,22 @@ namespace UponHeavyTides.Editor
             {
                 root.AddComponent<Level0Controller>();
             }
+            if (root.GetComponent<Level0StoryFlow>() == null)
+            {
+                root.AddComponent<Level0StoryFlow>();
+            }
         }
 
         private static void SetupCrabIntroDialogue(DialogueTrigger trigger)
         {
+            trigger.ClearLines();
+            trigger.triggerOnlyOnce = true;
+            trigger.triggerOnEnter = false;
+            trigger.interactRadius = 4.5f;
             trigger.AddLine("Crab Companion", "P-psst! Over here! Behind this rock!", new Color(1f, 0.65f, 0.3f));
             trigger.AddLine("Crab Companion", "By the Great Tides... you're not from the ocean! You're the creature from above!", new Color(1f, 0.65f, 0.3f));
             trigger.AddLine("Crab Companion", "A monster from the deep has stolen our world's light. Our kingdom is drowning in fear...", new Color(1f, 0.65f, 0.3f));
-            trigger.AddLine("Crab Companion", "Follow me to the Elder Sea Turtle! He has guarded the ancient prophecy for generations!", new Color(1f, 0.65f, 0.3f));
-
-            trigger.onDialogueFinished = new UnityEngine.Events.UnityEvent();
-            trigger.onDialogueFinished.AddListener(() =>
-            {
-                var comp = GameObject.Find("Crab")?.GetComponent<Companion>();
-                if (comp != null)
-                {
-                    comp.LeadTowards(new Vector3(0f, 0.4f, -7.5f));
-                }
-                if (Level0Controller.Instance != null)
-                {
-                    Level0Controller.Instance.UpdateObjective("Follow the Crab Companion to the Elder Sea Turtle sanctuary.");
-                }
-            });
+            trigger.AddLine("Crab Companion", "Follow me! Let's go to the Elder Sea Turtle at the ancient sanctuary!", new Color(1f, 0.65f, 0.3f));
         }
 
         private static void BuildElderSeaTurtle(Transform parent, Material matShell, Material matSkin, Material matRock, Material matCoral)
@@ -292,25 +286,15 @@ namespace UponHeavyTides.Editor
 
             // Dialogue Trigger for Turtle
             var diag = turtleObj.AddComponent<DialogueTrigger>();
+            diag.ClearLines();
+            diag.triggerOnlyOnce = true;
+            diag.triggerOnEnter = false;
+            diag.interactRadius = 6.0f;
             diag.AddLine("Elder Sea Turtle", "Welcome, traveler of the surface. It was foretold that a creature from above would descend when our world's light began to fade.", new Color(0.35f, 0.85f, 0.75f));
             diag.AddLine("Elder Sea Turtle", "A colossal monster haunts the deepest trenches. It drains the life from our corals and the color from our tides.", new Color(0.35f, 0.85f, 0.75f));
-            diag.AddLine("Elder Sea Turtle", "I appoint this young crab to be your guide and companion. He shall teach you the way of the water—to stride across the ocean bed, leap through currents, and shift heavy stones.", new Color(0.35f, 0.85f, 0.75f));
-            diag.AddLine("Crab Companion", "It is an honor, Elder! Listen closely, traveler: Press [SPACE] to leap over coral ridges. Press [A] to turn the camera right, and [D] to turn the camera left. Move in any direction using the [ARROW KEYS]: Up Arrow for forward, Down Arrow for backward, and Left/Right Arrows to steer.", new Color(1f, 0.65f, 0.3f));
-            diag.AddLine("Elder Sea Turtle", "Seek the gateway at the end of the shallows. The monster left a mark upon the stone... uncover it!", new Color(0.35f, 0.85f, 0.75f));
-
-            diag.onDialogueFinished = new UnityEngine.Events.UnityEvent();
-            diag.onDialogueFinished.AddListener(() =>
-            {
-                var comp = GameObject.Find("Crab")?.GetComponent<Companion>();
-                if (comp != null)
-                {
-                    comp.FollowPlayer();
-                }
-                if (Level0Controller.Instance != null)
-                {
-                    Level0Controller.Instance.OnElderTurtleMet();
-                }
-            });
+            diag.AddLine("Elder Sea Turtle", "I appoint this young crab to be your guide on your journey. He shall teach you the way of the water.", new Color(0.35f, 0.85f, 0.75f));
+            diag.AddLine("Crab Companion", "It is an honor, Elder! Listen closely, traveler: Press [SPACE] to jump over coral ridges. Press [A] to turn the camera right, and [D] to turn the camera left. Move in any direction using the [ARROW KEYS]: Up Arrow for forward, Down Arrow for backward, and Left/Right Arrows to steer.", new Color(1f, 0.65f, 0.3f));
+            diag.AddLine("Elder Sea Turtle", "Seek the gateway at the end of the shallows. Explore the reefs, meet the school of fish, and uncover the clue hidden beneath the great stone.", new Color(0.35f, 0.85f, 0.75f));
         }
 
         private static void BuildSchoolOfFish(Transform parent, Material matFish, Material matGlow)
@@ -349,19 +333,13 @@ namespace UponHeavyTides.Editor
             col.radius = 4.5f;
 
             var diag = schoolGroup.AddComponent<DialogueTrigger>();
-            diag.AddLine("School of Fish", "Greetings, surface traveler! We are the School of the Shallows.", new Color(0.2f, 0.9f, 1f));
-            diag.AddLine("School of Fish", "The currents have grown cold and dark since the monster of the deep awoke... but your presence brings new hope to our waters!", new Color(0.2f, 0.9f, 1f));
-            diag.AddLine("School of Fish", "Whenever you journey through the perils of the sea, we promise to guide your path, illuminate dark crevices, and assist you in whatever way we can!", new Color(0.2f, 0.9f, 1f));
-            diag.AddLine("Crab Companion", "Thank you, friends! The ancient gateway is just ahead past the coral ridge. Let's push aside the great boulder to reveal the monster's mark!", new Color(1f, 0.65f, 0.3f));
-
-            diag.onDialogueFinished = new UnityEngine.Events.UnityEvent();
-            diag.onDialogueFinished.AddListener(() =>
-            {
-                if (Level0Controller.Instance != null)
-                {
-                    Level0Controller.Instance.UpdateObjective("The Final Trial: Head to the far gateway and push aside the heavy boulder to reveal the monster's mark!");
-                }
-            });
+            diag.ClearLines();
+            diag.triggerOnlyOnce = true;
+            diag.triggerOnEnter = false;
+            diag.interactRadius = 5.0f;
+            diag.AddLine("School of Fish", "Greetings, surface friend! The currents whispered of your arrival.", new Color(0.4f, 0.85f, 1f));
+            diag.AddLine("School of Fish", "The waters ahead grow murky and perilous, but we promise to help you in whatever way we can on your voyage!", new Color(0.4f, 0.85f, 1f));
+            diag.AddLine("School of Fish", "Beware the giant boulder blocking the trench gateway ahead—it conceals an ancient mark of the beast.", new Color(0.4f, 0.85f, 1f));
         }
 
         private static void BuildTutorialCourse(Transform parent, Material matRock, Material matSand)
