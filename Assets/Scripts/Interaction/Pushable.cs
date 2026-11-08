@@ -14,9 +14,16 @@ namespace UponHeavyTides.Interaction
             body = GetComponent<Rigidbody>();
         }
 
-        public void Push(Vector3 direction, float pusherSpeed)
+        private float currentPusherSpeed = 1f;
+
+        public void SetPushSpeed(float speed)
         {
-            Vector3 velocity = direction * (pusherSpeed * pushSpeedFactor);
+            currentPusherSpeed = speed;
+        }
+
+        public void Push(Vector3 direction)
+        {
+            Vector3 velocity = direction * (currentPusherSpeed * pushSpeedFactor);
             velocity.y = body.linearVelocity.y;
             body.linearVelocity = velocity;
         }

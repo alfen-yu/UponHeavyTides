@@ -9,11 +9,12 @@ namespace UponHeavyTides.Player
 
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
-            if (!hit.collider.TryGetComponent(out Pushable pushable)) return;
+            if (!hit.collider.TryGetComponent(out UponHeavyTides.Interaction.Pushable pushable)) return;
             if (hit.moveDirection.y < -0.3f) return;
 
             Vector3 direction = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z).normalized;
-            pushable.Push(direction, pushSpeed);
+            pushable.SetPushSpeed(pushSpeed);
+            pushable.Push(direction);
         }
     }
 }
