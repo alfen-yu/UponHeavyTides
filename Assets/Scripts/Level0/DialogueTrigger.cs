@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
 namespace UponHeavyTides.Level0
 {
@@ -35,7 +36,14 @@ namespace UponHeavyTides.Level0
                 float dist = Vector3.Distance(transform.position, playerTransform.position);
                 playerInRange = dist <= interactRadius;
 
-                if (playerInRange && (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Return)))
+                bool interactPressed = false;
+                var keyboard = Keyboard.current;
+                if (keyboard != null)
+                {
+                    interactPressed = keyboard.eKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame;
+                }
+
+                if (playerInRange && interactPressed)
                 {
                     if (DialogueManager.Instance != null && !DialogueManager.Instance.IsDialogueActive)
                     {

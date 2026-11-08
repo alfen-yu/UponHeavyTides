@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using TMPro;
 
 namespace UponHeavyTides.Level0
@@ -72,11 +73,20 @@ namespace UponHeavyTides.Level0
         {
             if (!IsDialogueActive) return;
 
-            // Check for advance key: Space, E, Enter, or Mouse click
-            bool advancePressed = Input.GetKeyDown(KeyCode.E) ||
-                                  Input.GetKeyDown(KeyCode.Space) ||
-                                  Input.GetKeyDown(KeyCode.Return) ||
-                                  Input.GetMouseButtonDown(0);
+            // Advance key check using New Input System
+            bool advancePressed = false;
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                advancePressed = keyboard.eKey.wasPressedThisFrame ||
+                                 keyboard.spaceKey.wasPressedThisFrame ||
+                                 keyboard.enterKey.wasPressedThisFrame;
+            }
+            var mouse = Mouse.current;
+            if (!advancePressed && mouse != null)
+            {
+                advancePressed = mouse.leftButton.wasPressedThisFrame;
+            }
 
             if (advancePressed)
             {

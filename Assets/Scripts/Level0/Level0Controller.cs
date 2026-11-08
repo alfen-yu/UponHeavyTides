@@ -52,7 +52,7 @@ namespace UponHeavyTides.Level0
         {
             if (objectiveText != null)
             {
-                objectiveText.text = $"<color=#FFD700>◆ OBJECTIVE:</color> {text}";
+                objectiveText.text = $"<color=#FFD700>[OBJECTIVE]</color> {text}";
             }
         }
 
@@ -86,7 +86,7 @@ namespace UponHeavyTides.Level0
         {
             if (collectiblesCounterText != null)
             {
-                collectiblesCounterText.text = $"★ Shallows Relics: {collectiblesCollected}/{totalCollectibles}";
+                collectiblesCounterText.text = $"Shallows Relics: {collectiblesCollected}/{totalCollectibles}";
             }
         }
 
@@ -194,7 +194,7 @@ namespace UponHeavyTides.Level0
             collectiblesCounterText.fontSize = 20;
             collectiblesCounterText.color = new Color(1f, 0.85f, 0.3f);
             collectiblesCounterText.alignment = TextAlignmentOptions.Center;
-            collectiblesCounterText.text = $"★ Shallows Relics: {collectiblesCollected}/{totalCollectibles}";
+            collectiblesCounterText.text = $"Shallows Relics: {collectiblesCollected}/{totalCollectibles}";
 
             // Clue Popup
             cluePopupPanel = new GameObject("CluePopupPanel");

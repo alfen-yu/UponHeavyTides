@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace UponHeavyTides.Player
 {
@@ -6,12 +7,12 @@ namespace UponHeavyTides.Player
     public class PlayerMovement : MonoBehaviour
     {
         [Header("Movement")]
-        [SerializeField] private float movingSpeed = 4.5f;
-        [SerializeField] private float acceleration = 12f;
+        [SerializeField] private float movingSpeed = 5.0f;
+        [SerializeField] private float acceleration = 14f;
         [SerializeField] private float rotationSpeed = 10f;
 
         [Header("Jump")]
-        [SerializeField] private float jumpHeight = 1.2f;
+        [SerializeField] private float jumpHeight = 1.3f;
         [SerializeField] private float gravity = -20f;
 
         private CharacterController characterController;
@@ -47,17 +48,20 @@ namespace UponHeavyTides.Player
 
         private void ApplyHorizontalMovement()
         {
-            // Gather input from Arrow Keys and WASD / Input System
             float horizontal = 0f;
             float vertical = 0f;
 
-            // Direct arrow key input
-            if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W)) vertical += 1f;
-            if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.S)) vertical -= 1f;
-            if (Input.GetKey(KeyCode.LeftArrow)) horizontal -= 1f;
-            if (Input.GetKey(KeyCode.RightArrow)) horizontal += 1f;
+            // Use New Input System Keyboard directly
+            var keyboard = Keyboard.current;
+            if (keyboard != null)
+            {
+                if (keyboard.upArrowKey.isPressed || keyboard.wKey.isPressed) vertical += 1f;
+                if (keyboard.downArrowKey.isPressed || keyboard.sKey.isPressed) vertical -= 1f;
+                if (keyboard.leftArrowKey.isPressed) horizontal -= 1f;
+                if (keyboard.rightArrowKey.isPressed) horizontal += 1f;
+            }
 
-            // If Input System reader provides values, combine them safely
+            // Also check PlayerInputReader if configured
             if (input != null)
             {
                 try
@@ -71,13 +75,13 @@ namespace UponHeavyTides.Player
                 }
                 catch
                 {
-                    // Ignore Input System binding issues during tests
+                    // Safe fallback
                 }
             }
 
             Vector2 inputDir = Vector2.ClampMagnitude(new Vector2(horizontal, vertical), 1f);
 
-            // Calculate movement relative to Camera view
+            // Movement relative to Camera orientation
             Vector3 camForward = Vector3.forward;
             Vector3 camRight = Vector3.right;
 
@@ -98,7 +102,13 @@ namespace UponHeavyTides.Player
 
         private void ApplyVerticalMovement()
         {
-            bool jumpPressed = Input.GetKeyDown(KeyCode.Space);
+            bool jumpPressed = false;
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+            {
+                jumpPressed = true;
+            }
+
             if (input != null)
             {
                 try
@@ -107,7 +117,7 @@ namespace UponHeavyTides.Player
                 }
                 catch
                 {
-                    // Ignore
+                    // Safe fallback
                 }
             }
 

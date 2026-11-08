@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CameraTracker : MonoBehaviour
 {
@@ -47,14 +48,18 @@ public class CameraTracker : MonoBehaviour
             if (target == null) return;
         }
 
-        // User requested: "press A to turn camera right and press D to turn camera left"
-        if (Input.GetKey(KeyCode.A))
+        // New Input System check for A and D keys
+        var keyboard = Keyboard.current;
+        if (keyboard != null)
         {
-            currentYaw += turnSpeed * Time.deltaTime;
-        }
-        if (Input.GetKey(KeyCode.D))
-        {
-            currentYaw -= turnSpeed * Time.deltaTime;
+            if (keyboard.aKey.isPressed)
+            {
+                currentYaw += turnSpeed * Time.deltaTime;
+            }
+            if (keyboard.dKey.isPressed)
+            {
+                currentYaw -= turnSpeed * Time.deltaTime;
+            }
         }
 
         Quaternion rotation = Quaternion.Euler(0f, currentYaw, 0f);
