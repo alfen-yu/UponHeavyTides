@@ -18,6 +18,18 @@ namespace UponHeavyTides.Level0
     public class DialogueManager : MonoBehaviour
     {
         public static DialogueManager Instance { get; private set; }
+        public static DialogueManager instance => Instance;
+
+        public void StartDialogue(string dialogue, string speaker = "Guide", Action onComplete = null)
+        {
+            var line = new DialogueLine
+            {
+                speakerName = speaker,
+                text = dialogue,
+                speakerColor = Color.cyan
+            };
+            StartDialogue(new List<DialogueLine> { line }, onComplete);
+        }
 
         [Header("UI References")]
         [SerializeField] private GameObject dialoguePanel;
