@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2671ba8cec6516644816e8c411ad7e6c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 400006
+  packageName: Fish Shader Animation
+  packageVersion: 0.9
+  assetPath: Assets/mc_try/SceneSettings/UniversalRenderPipelineGlobalSettings 1.asset
+  uploadId: 974624

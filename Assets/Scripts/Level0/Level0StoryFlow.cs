@@ -10,12 +10,12 @@ namespace UponHeavyTides.Level0
 
         public enum StoryStage
         {
-            FindCrab,              // Stage 0: Crab sheltering behind rock
-            LeadingToTurtle,       // Stage 1: Crab leading player to Elder Turtle
-            TalkToTurtle,          // Stage 2: Arrived at Sanctuary, speak with Elder Turtle
-            ExplorationTutorial,   // Stage 3: Controls taught, crab follows player, explore reefs & meet fish
-            ShiftBoulderToGate,    // Stage 4: Found fish, reach boulder & push it
-            Completed              // Stage 5: Clue uncovered, tutorial finished
+            FindCrab,              // Crab sheltering behind rock
+            LeadingToTurtle,       // Crab leading player to Elder Turtle
+            TalkToTurtle,          // Arrived at Sanctuary, speak with Elder Turtle
+            ExplorationTutorial,   // Controls taught, crab follows player, explore reefs
+            ShiftBoulderToGate,    // Fish spoke about the boulder, head to gate and push it
+            Completed              // Clue uncovered, tutorial finished
         }
 
         [Header("Current Progress")]
@@ -26,6 +26,11 @@ namespace UponHeavyTides.Level0
         [SerializeField] private DialogueTrigger crabDialogue;
         [SerializeField] private DialogueTrigger turtleDialogue;
         [SerializeField] private DialogueTrigger fishDialogue;
+        [SerializeField] private Transform playerTransform;
+
+        private bool hasTriggeredPearlPrompt = false;
+        private bool hasTriggeredFishDialogue = false;
+        private List<Transform> pearlTransforms = new List<Transform>();
 
         public StoryStage CurrentStage => currentStage;
 
@@ -59,7 +64,13 @@ namespace UponHeavyTides.Level0
 
         public void FindSceneReferences()
         {
-            if (crabCompanion == null)
+            if (playerTransform == null)
+            {
+                var p = GameObject.FindGameObjectWithTag("Player");
+                if (p != null) playerTransform = p.transform;
+            }
+
+            if (crabCompanion == null || crabDialogue == null)
             {
                 var crabObj = GameObject.Find("Crab");
                 if (crabObj != null)
@@ -86,11 +97,25 @@ namespace UponHeavyTides.Level0
                     fishDialogue = fishObj.GetComponent<DialogueTrigger>();
                 }
             }
+
+            // Find all pearls
+            pearlTransforms.Clear();
+            var relicsRoot = GameObject.Find("_EXPLORATION_RELICS");
+            if (relicsRoot != null)
+            {
+                foreach (Transform child in relicsRoot.transform)
+                {
+                    if (child.GetComponent<CollectibleItem>() != null)
+                    {
+                        pearlTransforms.Add(child);
+                    }
+                }
+            }
         }
 
         public void ConfigureStoryTriggers()
         {
-            // 1. Crab Intro Dialogue
+            // Crab Introduction Dialogue
             if (crabDialogue != null)
             {
                 crabDialogue.triggerOnlyOnce = true;
@@ -102,11 +127,12 @@ namespace UponHeavyTides.Level0
                 crabDialogue.AddLine("Crab Companion", "A monster from the deep has stolen our world's light. Our kingdom is drowning in fear...", new Color(1f, 0.65f, 0.3f));
                 crabDialogue.AddLine("Crab Companion", "Follow me! Let's go to the Elder Sea Turtle at the ancient sanctuary!", new Color(1f, 0.65f, 0.3f));
 
+                crabDialogue.onFinishedCallback = OnCrabIntroFinished;
                 crabDialogue.onDialogueFinished.RemoveAllListeners();
                 crabDialogue.onDialogueFinished.AddListener(OnCrabIntroFinished);
             }
 
-            // 2. Elder Sea Turtle Sanctuary Dialogue & Control Tutorial
+            // Elder Sea Turtle Sanctuary Dialogue & Moves Tutorial
             if (turtleDialogue != null)
             {
                 turtleDialogue.triggerOnlyOnce = true;
@@ -116,26 +142,95 @@ namespace UponHeavyTides.Level0
                 turtleDialogue.AddLine("Elder Sea Turtle", "Welcome, traveler of the surface. It was foretold that a creature from above would descend when our world's light began to fade.", new Color(0.35f, 0.85f, 0.75f));
                 turtleDialogue.AddLine("Elder Sea Turtle", "A colossal monster haunts the deepest trenches. It drains the life from our corals and the color from our tides.", new Color(0.35f, 0.85f, 0.75f));
                 turtleDialogue.AddLine("Elder Sea Turtle", "I appoint this young crab to be your guide on your journey. He shall teach you the way of the water.", new Color(0.35f, 0.85f, 0.75f));
-                turtleDialogue.AddLine("Crab Companion", "It is an honor, Elder! Listen closely, traveler: Press [SPACE] to jump over coral ridges. Press [A] to turn the camera right, and [D] to turn the camera left. Move in any direction using the [ARROW KEYS]: Up Arrow for forward, Down Arrow for backward, and Left/Right Arrows to steer.", new Color(1f, 0.65f, 0.3f));
+                turtleDialogue.AddLine("Crab Companion", "It is an honor, Elder! Listen closely, traveler: Press [SPACE] to jump over coral ridges. Press [A] to turn the camera left, and [D] to turn the camera right. Move in any direction using [W][S] or the [ARROW KEYS]: Up Arrow for forward, Down Arrow for backward, and Left/Right Arrows to steer.", new Color(1f, 0.65f, 0.3f));
+                turtleDialogue.AddLine("Crab Companion", "Now let's explore around the map! There are ancient relics and clues hidden across these reefs.", new Color(1f, 0.65f, 0.3f));
                 turtleDialogue.AddLine("Elder Sea Turtle", "Seek the gateway at the end of the shallows. Explore the reefs, meet the school of fish, and uncover the clue hidden beneath the great stone.", new Color(0.35f, 0.85f, 0.75f));
 
+                turtleDialogue.onFinishedCallback = OnTurtleDialogueFinished;
                 turtleDialogue.onDialogueFinished.RemoveAllListeners();
                 turtleDialogue.onDialogueFinished.AddListener(OnTurtleDialogueFinished);
             }
 
-            // 3. School of Fish Encounter Dialogue
+            // School of Fish Encounter Dialogue
             if (fishDialogue != null)
             {
                 fishDialogue.triggerOnlyOnce = true;
-                fishDialogue.triggerOnEnter = false;
+                fishDialogue.triggerOnEnter = true; // Auto-trigger when close
                 fishDialogue.interactRadius = 5.0f;
                 fishDialogue.ClearLines();
                 fishDialogue.AddLine("School of Fish", "Greetings, surface friend! The currents whispered of your arrival.", new Color(0.4f, 0.85f, 1f));
-                fishDialogue.AddLine("School of Fish", "The waters ahead grow murky and perilous, but we promise to help you in whatever way we can on your voyage!", new Color(0.4f, 0.85f, 1f));
-                fishDialogue.AddLine("School of Fish", "Beware the giant boulder blocking the trench gateway ahead—it conceals an ancient mark of the beast.", new Color(0.4f, 0.85f, 1f));
+                fishDialogue.AddLine("School of Fish", "Beware the giant boulder blocking the trench gateway ahead! You can shift the heavy rock by walking directly into it—push it aside to reveal the beast's mark!", new Color(0.4f, 0.85f, 1f));
+                fishDialogue.AddLine("Crab Companion", "Thank you, friends! Let's head to the trench gateway and push that boulder aside!", new Color(1f, 0.65f, 0.3f));
 
+                fishDialogue.onFinishedCallback = OnFishDialogueFinished;
                 fishDialogue.onDialogueFinished.RemoveAllListeners();
                 fishDialogue.onDialogueFinished.AddListener(OnFishDialogueFinished);
+            }
+        }
+
+        private void Update()
+        {
+            if (playerTransform == null)
+            {
+                var p = GameObject.FindGameObjectWithTag("Player");
+                if (p != null) playerTransform = p.transform;
+                if (playerTransform == null) return;
+            }
+
+            // Check proximity to pearl while exploring
+            if (currentStage >= StoryStage.ExplorationTutorial && !hasTriggeredPearlPrompt)
+            {
+                CheckPearlProximity();
+            }
+
+            // Check proximity to school of fish while exploring
+            if (currentStage >= StoryStage.ExplorationTutorial && !hasTriggeredFishDialogue && fishDialogue != null)
+            {
+                float distToFish = Vector3.Distance(playerTransform.position, fishDialogue.transform.position);
+                if (distToFish <= fishDialogue.interactRadius)
+                {
+                    if (DialogueManager.Instance != null && !DialogueManager.Instance.IsDialogueActive)
+                    {
+                        fishDialogue.TriggerDialogue();
+                    }
+                }
+            }
+        }
+
+        private void CheckPearlProximity()
+        {
+            if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive) return;
+
+            for (int i = pearlTransforms.Count - 1; i >= 0; i--)
+            {
+                var pearl = pearlTransforms[i];
+                if (pearl == null || !pearl.gameObject.activeInHierarchy)
+                {
+                    pearlTransforms.RemoveAt(i);
+                    continue;
+                }
+
+                float dist = Vector3.Distance(playerTransform.position, pearl.position);
+                if (dist <= 4.5f)
+                {
+                    hasTriggeredPearlPrompt = true;
+
+                    if (DialogueManager.Instance != null)
+                    {
+                        DialogueManager.Instance.StartDialogue(
+                            "Look over there! That glowing sunlit pearl carries the ancient memories of our reefs. Walk into it to collect it!",
+                            "Crab Companion",
+                            () =>
+                            {
+                                if (Level0Controller.Instance != null)
+                                {
+                                    Level0Controller.Instance.UpdateObjective("Gather the glowing Shallows Relics and explore the reefs.");
+                                }
+                            }
+                        );
+                    }
+                    break;
+                }
             }
         }
 
@@ -181,6 +276,7 @@ namespace UponHeavyTides.Level0
 
         public void OnFishDialogueFinished()
         {
+            hasTriggeredFishDialogue = true;
             currentStage = StoryStage.ShiftBoulderToGate;
             if (fishDialogue != null) fishDialogue.enabled = false;
 

@@ -10,7 +10,7 @@ namespace UponHeavyTides.Level0
 
         [Header("State")]
         public int collectiblesCollected = 0;
-        public int totalCollectibles = 5;
+        public int totalCollectibles = 6;
         public bool hasMetElderTurtle = false;
         public bool hasDiscoveredClue = false;
 
@@ -30,14 +30,17 @@ namespace UponHeavyTides.Level0
             }
             Instance = this;
 
-            // Load persisted state
-            int savedCollected;
-            bool savedMetTurtle;
-            bool savedClue;
-            Level0Save.Load(out savedCollected, out savedMetTurtle, out savedClue);
-            collectiblesCollected = savedCollected;
-            hasMetElderTurtle = savedMetTurtle;
-            hasDiscoveredClue = savedClue;
+            // Ensure story progression is attached to managers
+            if (GetComponent<Level0StoryFlow>() == null)
+            {
+                gameObject.AddComponent<Level0StoryFlow>();
+            }
+
+            // Always start Level 0 tutorial fresh
+            collectiblesCollected = 0;
+            hasMetElderTurtle = false;
+            hasDiscoveredClue = false;
+            Level0Save.Save(0, false, false);
 
             CreateHUD();
         }
@@ -58,7 +61,7 @@ namespace UponHeavyTides.Level0
 
         public void AddCollectible(string name)
         {
-            collectiblesCollected++;
+            collectiblesCollected = Mathf.Min(collectiblesCollected + 1, totalCollectibles);
             UpdateCollectiblesUI();
             Level0Save.Save(collectiblesCollected, hasMetElderTurtle, hasDiscoveredClue);
 
@@ -100,17 +103,16 @@ namespace UponHeavyTides.Level0
         public void OnClueDiscovered(string title, string content)
         {
             hasDiscoveredClue = true;
-            UpdateObjective("<color=#00FF7F>Tutorial Complete!</color> The first monster clue has been recorded in your journal.");
-
-            if (cluePopupPanel != null)
-            {
-                cluePopupPanel.SetActive(true);
-                if (clueTitleText != null) clueTitleText.text = title;
-                if (clueBodyText != null) clueBodyText.text = content;
-            }
+            UpdateObjective("<color=#00FFCC>Clue Recorded!</color> Monster sucker mark found! Press [Enter] to enter Level 1.");
 
             // Save progress
             Level0Save.Save(collectiblesCollected, hasMetElderTurtle, hasDiscoveredClue);
+
+            // Disable all world dialogue triggers so no other dialogue can ever interrupt or re-fire
+            foreach (var dt in FindObjectsByType<DialogueTrigger>(FindObjectsSortMode.None))
+            {
+                dt.enabled = false;
+            }
 
             // Post‑discovery dialogue
             if (DialogueManager.Instance != null)
@@ -127,13 +129,10 @@ namespace UponHeavyTides.Level0
                     {
                         speakerName = "Crab Companion",
                         speakerColor = new Color(1f, 0.65f, 0.3f),
-                        text = "Your notebook is glowing! The prophecy was true—you have sketched the beak of the terror haunting our seas. The path to the Kelp Forest is now open!"
+                        text = "Your notebook is glowing! The prophecy was true—you have sketched the beak and sucker of the beast. Press [Enter] whenever you are ready to proceed to the Kelp Forest!"
                     }
                 });
             }
-
-            // Show level complete UI
-            CompleteLevel();
         }
 
         private void CreateHUD()
@@ -237,29 +236,22 @@ namespace UponHeavyTides.Level0
             cluePopupPanel.SetActive(false);
         }
 
-        private void CompleteLevel()
+        private void Update()
         {
-            GameObject panel = new GameObject("LevelCompletePanel");
-            panel.transform.SetParent(GameObject.Find("Level0_HUD_Canvas").transform, false);
-            var rect = panel.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.25f, 0.4f);
-            rect.anchorMax = new Vector2(0.75f, 0.6f);
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            var img = panel.AddComponent<UnityEngine.UI.Image>();
-            img.color = new Color(0f, 0.5f, 0f, 0.85f);
-            var txtObj = new GameObject("Message");
-            txtObj.transform.SetParent(panel.transform, false);
-            var txtRect = txtObj.AddComponent<RectTransform>();
-            txtRect.anchorMin = new Vector2(0.1f, 0.2f);
-            txtRect.anchorMax = new Vector2(0.9f, 0.8f);
-            txtRect.offsetMin = Vector2.zero;
-            txtRect.offsetMax = Vector2.zero;
-            var txt = txtObj.AddComponent<TextMeshProUGUI>();
-            txt.text = "Level 0 Complete!\nProceed to Level 1 when ready.";
-            txt.fontSize = 28;
-            txt.alignment = TMPro.TextAlignmentOptions.Center;
-            txt.color = Color.white;
+            if (hasDiscoveredClue)
+            {
+                if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive)
+                {
+                    return;
+                }
+
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                bool enterPressed = kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame);
+                if (enterPressed)
+                {
+                    UnityEngine.SceneManagement.SceneManager.LoadScene("Level1");
+                }
+            }
         }
     }
 }

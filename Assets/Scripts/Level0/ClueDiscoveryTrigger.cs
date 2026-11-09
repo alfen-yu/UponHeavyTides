@@ -39,7 +39,20 @@ namespace UponHeavyTides.Level0
         {
             if (hasDiscovered) return;
 
-            // Constantly verify if the boulder has been moved away from its starting spot
+            // Only allow clue discovery if the story has progressed to exploration
+            if (Level0StoryFlow.Instance != null && Level0StoryFlow.Instance.CurrentStage < Level0StoryFlow.StoryStage.ExplorationTutorial)
+            {
+                return;
+            }
+
+            // The player must be near the gateway to discover the clue
+            var player = GameObject.FindGameObjectWithTag("Player");
+            if (player == null || Vector3.Distance(transform.position, player.transform.position) > 10f)
+            {
+                return;
+            }
+
+            // Boulder Movement
             if (boulderFound && blockingBoulder != null)
             {
                 float distMoved = Vector3.Distance(blockingBoulder.position, initialBoulderPos);
@@ -64,6 +77,11 @@ namespace UponHeavyTides.Level0
         {
             if (hasDiscovered) return;
             if (!other.CompareTag("Player") && other.GetComponent<UponHeavyTides.Player.PlayerMovement>() == null) return;
+
+            if (Level0StoryFlow.Instance != null && Level0StoryFlow.Instance.CurrentStage < Level0StoryFlow.StoryStage.ExplorationTutorial)
+            {
+                return;
+            }
 
             if (boulderFound && blockingBoulder != null)
             {

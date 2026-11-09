@@ -233,7 +233,7 @@ namespace UponHeavyTides.Level0
             promptText.fontSize = 16;
             promptText.alignment = TextAlignmentOptions.Right;
             promptText.color = new Color(0.8f, 0.9f, 1f, 0.6f);
-            promptText.text = "Press [E] or [Space] to continue ▸";
+            promptText.text = "Press [E] or [Space] to continue >";
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -15,6 +16,7 @@ namespace UponHeavyTides.Level0
 
         [Header("Events")]
         public UnityEvent onDialogueFinished;
+        public Action onFinishedCallback;
 
         private bool hasTriggered = false;
         private bool playerInRange = false;
@@ -33,7 +35,6 @@ namespace UponHeavyTides.Level0
         private void Update()
         {
             if (hasTriggered && triggerOnlyOnce) return;
-            if (triggerOnEnter) return;
 
             // Prevent re-triggering immediately when another dialogue just ended
             if (Time.time < lastDialogueEndTime + 0.8f) return;
@@ -48,11 +49,20 @@ namespace UponHeavyTides.Level0
             float dist = Vector3.Distance(transform.position, playerTransform.position);
             playerInRange = dist <= interactRadius;
 
+            if (triggerOnEnter)
+            {
+                if (playerInRange && DialogueManager.Instance != null && !DialogueManager.Instance.IsDialogueActive)
+                {
+                    TriggerDialogue();
+                }
+                return;
+            }
+
             bool interactPressed = false;
             var keyboard = Keyboard.current;
             if (keyboard != null)
             {
-                interactPressed = keyboard.eKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame;
+                interactPressed = keyboard.eKey.wasPressedThisFrame;
             }
 
             if (playerInRange && interactPressed)
@@ -87,6 +97,21 @@ namespace UponHeavyTides.Level0
                 {
                     lastDialogueEndTime = Time.time;
                     onDialogueFinished?.Invoke();
+                    onFinishedCallback?.Invoke();
+
+                    // Direct progression safety call
+                    if (name == "Crab")
+                    {
+                        Level0StoryFlow.Instance?.OnCrabIntroFinished();
+                    }
+                    else if (name == "Elder_Sea_Turtle")
+                    {
+                        Level0StoryFlow.Instance?.OnTurtleDialogueFinished();
+                    }
+                    else if (name == "School_Of_Fish_NPC")
+                    {
+                        Level0StoryFlow.Instance?.OnFishDialogueFinished();
+                    }
 
                     if (triggerOnlyOnce)
                     {

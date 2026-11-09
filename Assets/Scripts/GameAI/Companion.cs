@@ -42,6 +42,14 @@ namespace UponHeavyTides.AI
         private void Start()
         {
             FindPlayer();
+
+            if (agent != null && agent.isActiveAndEnabled && !agent.isOnNavMesh)
+            {
+                if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5.0f, NavMesh.AllAreas))
+                {
+                    agent.Warp(hit.position);
+                }
+            }
         }
 
         private void FindPlayer()
@@ -71,10 +79,22 @@ namespace UponHeavyTides.AI
             onArrivedAtDestination = onArrive;
             currentMode = CompanionMode.LeadingToTarget;
 
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            if (agent != null && agent.isActiveAndEnabled)
             {
-                agent.isStopped = false;
-                agent.SetDestination(destination);
+                if (!agent.isOnNavMesh)
+                {
+                    if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5.0f, NavMesh.AllAreas))
+                    {
+                        agent.Warp(hit.position);
+                    }
+                }
+
+                if (agent.isOnNavMesh)
+                {
+                    agent.isStopped = false;
+                    agent.stoppingDistance = 1.0f;
+                    agent.SetDestination(destination);
+                }
             }
         }
 
@@ -83,9 +103,21 @@ namespace UponHeavyTides.AI
             currentMode = CompanionMode.FollowingPlayer;
             FindPlayer();
 
-            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            if (agent != null && agent.isActiveAndEnabled)
             {
-                agent.isStopped = false;
+                agent.stoppingDistance = followDistance;
+                if (!agent.isOnNavMesh)
+                {
+                    if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5.0f, NavMesh.AllAreas))
+                    {
+                        agent.Warp(hit.position);
+                    }
+                }
+
+                if (agent.isOnNavMesh)
+                {
+                    agent.isStopped = false;
+                }
             }
         }
 
@@ -111,8 +143,8 @@ namespace UponHeavyTides.AI
                     onArrivedAtDestination = null;
                     callback?.Invoke();
 
-                    // Face forward into the sanctuary
-                    Vector3 lookDir = (leadDestination - transform.position);
+                    // Face towards the Elder Sea Turtle sanctuary
+                    Vector3 lookDir = (new Vector3(0f, 0f, -10f) - transform.position);
                     lookDir.y = 0;
                     if (lookDir.sqrMagnitude > 0.01f)
                     {
@@ -153,7 +185,7 @@ namespace UponHeavyTides.AI
             }
             else
             {
-                // Smooth frame-by-frame fallback movement
+                // Smooth frame-by-frame fallback movement if not on NavMesh
                 Vector3 dir = (point - transform.position);
                 dir.y = 0f;
                 if (dir.sqrMagnitude > 0.05f)

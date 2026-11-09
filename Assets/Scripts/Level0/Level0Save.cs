@@ -2,10 +2,9 @@ using UnityEngine;
 
 namespace UponHeavyTides.Level0
 {
-    /// <summary>
-    /// Simple persistence for Level 0 tutorial state using PlayerPrefs.
+   
     /// Stores collectibles count, whether the elder turtle was met, and whether the clue was discovered.
-    /// </summary>
+    
     public static class Level0Save
     {
         private const string KeyCollectibles = "Level0_Collectibles";

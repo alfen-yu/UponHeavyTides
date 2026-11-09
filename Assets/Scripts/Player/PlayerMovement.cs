@@ -7,8 +7,8 @@ namespace UponHeavyTides.Player
     public class PlayerMovement : MonoBehaviour
     {
         [Header("Movement")]
-        [SerializeField] private float movingSpeed = 5.0f;
-        [SerializeField] private float acceleration = 14f;
+        [SerializeField] private float movingSpeed = 7.0f;
+        [SerializeField] private float acceleration = 18f;
         [SerializeField] private float rotationSpeed = 10f;
 
         [Header("Jump")]
@@ -20,16 +20,19 @@ namespace UponHeavyTides.Player
         private Vector3 horizontalVelocity;
         private float verticalVelocity;
         private Camera mainCamera;
+        private Vector3 spawnPosition;
 
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
             input = GetComponent<PlayerInputReader>();
             mainCamera = Camera.main;
+            spawnPosition = transform.position;
         }
 
         private void Start()
         {
+            spawnPosition = transform.position;
             if (mainCamera == null)
             {
                 mainCamera = Camera.main;
@@ -39,6 +42,17 @@ namespace UponHeavyTides.Player
         private void Update()
         {
             if (characterController == null) return;
+
+            // Safety respawn if falling into the void
+            if (transform.position.y < -15f)
+            {
+                characterController.enabled = false;
+                transform.position = spawnPosition;
+                verticalVelocity = 0f;
+                horizontalVelocity = Vector3.zero;
+                characterController.enabled = true;
+                return;
+            }
 
             ApplyHorizontalMovement();
             ApplyVerticalMovement();

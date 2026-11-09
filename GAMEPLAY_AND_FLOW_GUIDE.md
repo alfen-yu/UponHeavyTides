@@ -27,7 +27,7 @@ In the game design and user interface, these items are named **Shallows Relics**
   ```
   Shallows Relics: X/5
   ```
-- **Purpose:** Optional exploration collectibles that encourage the player to explore reefs and practice jumping and navigation before entering the abyss.
+- **Proximity Callout:** As soon as the player walks near any uncollected pearl (within 4.5m), the Crab Companion alerts them to collect it.
 
 ---
 
@@ -36,51 +36,61 @@ In the game design and user interface, these items are named **Shallows Relics**
 ### Stage 1: Awakening Behind the Rock
 - **Spawn:** The player arrives on the seabed at `(0, 1, -32)`.
 - **HUD Objective:** `[OBJECTIVE] Awakening: Talk to the nervous crab sheltering behind the rock.`
-- **NPC:** The Crab Companion waits at `(-3.5, 0.4, -30)` behind a large shelter rock.
+- **NPC:** The Crab Companion waits at `(-3.5, 0.4, -30)` sheltering behind a rock in `WaitingForPlayer` mode.
 - **Interaction:** Player approaches within 4.5m and presses **E**.
-- **Dialogue (Fires ONCE only):**
+- **Dialogue (Fires ONCE only — exactly 4 lines):**
   1. *Crab:* "P-psst! Over here! Behind this rock!"
   2. *Crab:* "By the Great Tides... you're not from the ocean! You're the creature from above!"
   3. *Crab:* "A monster from the deep has stolen our world's light. Our kingdom is drowning in fear..."
   4. *Crab:* "Follow me! Let's go to the Elder Sea Turtle at the ancient sanctuary!"
 - **State Transition:** 
   - Crab's intro dialogue trigger is permanently disabled.
-  - Crab transitions to `LeadingToTarget` mode and walks smoothly to the turtle sanctuary at `(0, 0.4, -7.5)`.
+  - Crab immediately switches to `LeadingToTarget` mode and leads the player to the sanctuary at `(0, 0.4, -7.5)`.
   - HUD Objective updates to: `Follow the Crab Companion to the Elder Sea Turtle sanctuary.`
 
 ---
 
 ### Stage 2: The Elder Sea Turtle Sanctuary
 - **Location:** Ancient coral altar and pillars at `(0, 0, -10)`.
-- **NPCs:** Elder Sea Turtle and Crab Companion waiting by the entrance.
+- **NPCs:** Elder Sea Turtle and Crab Companion waiting at the entrance.
 - **Interaction:** Player approaches the Elder Turtle and presses **E**.
 - **Dialogue (Fires ONCE only):**
   1. *Elder Turtle:* "Welcome, traveler of the surface. It was foretold that a creature from above would descend when our world's light began to fade."
   2. *Elder Turtle:* "A colossal monster haunts the deepest trenches. It drains the life from our corals and the color from our tides."
   3. *Elder Turtle:* "I appoint this young crab to be your guide on your journey. He shall teach you the way of the water."
   4. *Crab Companion:* "It is an honor, Elder! Listen closely, traveler: Press [SPACE] to jump over coral ridges. Press [A] to turn the camera right, and [D] to turn the camera left. Move in any direction using the [ARROW KEYS]: Up Arrow for forward, Down Arrow for backward, and Left/Right Arrows to steer."
-  5. *Elder Turtle:* "Seek the gateway at the end of the shallows. Explore the reefs, meet the school of fish, and uncover the clue hidden beneath the great stone."
+  5. *Crab Companion:* "Now let's explore around the map! There are ancient relics and clues hidden across these reefs."
+  6. *Elder Turtle:* "Seek the gateway at the end of the shallows. Explore the reefs, meet the school of fish, and uncover the clue hidden beneath the great stone."
 - **State Transition:**
   - Turtle dialogue is permanently disabled.
-  - Crab transitions to `FollowingPlayer` mode and actively follows the player everywhere.
+  - Crab switches to `FollowingPlayer` mode and actively follows the player everywhere.
   - HUD Objective updates to: `The Way of the Water: Practice moving (Arrows / WASD), jumping (Space), and camera rotation (A/D). Explore the shallows!`
 
 ---
 
-### Stage 3: Exploring the Shallows & School of Fish
+### Stage 3: Exploring & Pearl Proximity Callout
+- While exploring the reefs:
+- When the player moves close to any of the 5 pearls (within 4.5m):
+  - Crab Companion calls out: *"Look over there! That glowing sunlit pearl carries the ancient memories of our reefs. Walk into it to collect it!"*
+  - Objective updates: `Gather the glowing Shallows Relics and explore the reefs.`
+  - Only happens once!
+
+---
+
+### Stage 4: Meeting the School of Fish
 - **Location:** The swimming school of fish near the reef at `(12, 1.8, 6)`.
-- **Interaction:** Player approaches within 5m and presses **E**.
+- **Trigger:** Auto-triggers as soon as the player gets close (within 5.0m).
 - **Dialogue (Fires ONCE only):**
   1. *School of Fish:* "Greetings, surface friend! The currents whispered of your arrival."
-  2. *School of Fish:* "The waters ahead grow murky and perilous, but we promise to help you in whatever way we can on your voyage!"
-  3. *School of Fish:* "Beware the giant boulder blocking the trench gateway ahead—it conceals an ancient mark of the beast."
+  2. *School of Fish:* "Beware the giant boulder blocking the trench gateway ahead! You can shift the heavy rock by walking directly into it—push it aside to reveal the beast's mark!"
+  3. *Crab Companion:* "Thank you, friends! Let's head to the trench gateway and push that boulder aside!"
 - **State Transition:**
   - School of Fish dialogue disabled.
   - HUD Objective updates to: `Investigate the trench gateway and push the heavy boulder aside to reveal the clue.`
 
 ---
 
-### Stage 4: Culmination — Shifting the Boulder & Clue Discovery
+### Stage 5: Culmination — Shifting the Boulder & Clue Discovery
 - **Location:** The Trench Gateway at `(0, 0, 26)`.
 - **Puzzle:** A heavy sandstone boulder (`FinalBoulder`) blocks a stone wall carving.
 - **Action:** Player walks forward into the boulder. `Pushable.cs` allows physics movement.
@@ -93,28 +103,15 @@ In the game design and user interface, these items are named **Shallows Relics**
 
 ---
 
-## 5. Level 1: The Kelp Forest Maze (Preview)
-- **First 1/4 of Level:** Safe sanctuary zone containing the shell-less Hermit Crab's house. The player speaks with the Hermit Crab to learn about their stolen shell.
-- **Remaining 3/4 of Level:** A Pac-Man inspired kelp labyrinth.
-- **Predators:** 2 groups of Barracudas (2 fish per group) patrolling set waypoint loops.
-- **AI Behavior:** `BarracudaAI.cs` Finite State Machine:
-  - **Patrol:** Swimming along patrol circuit.
-  - **Investigate:** Heard a noise or saw movement.
-  - **Chase:** Pursuing player within sight cone.
-  - **Return:** Losing sight and returning to waypoint route.
-- **Stealth:** Hiding groves where the player can blend in to break predator line-of-sight (`StealthZoneTrigger.cs`).
-
----
-
 ## 6. Architecture & Code Structure
 ```
 Assets/
 ├── Scripts/
 │   ├── Level0/
-│   │   ├── Level0StoryFlow.cs       # Orchestrates narrative stages & dialogue progression
+│   │   ├── Level0StoryFlow.cs       # Orchestrates narrative stages, dialogues, & proximity checks
 │   │   ├── Level0Controller.cs      # Manages HUD, objectives, relics, and level save
 │   │   ├── DialogueManager.cs       # Typewriter dialogue UI singleton
-│   │   ├── DialogueTrigger.cs       # Handles interact key (E/Enter) & single execution
+│   │   ├── DialogueTrigger.cs       # Handles interact key (E/Enter), auto-trigger, & single execution
 │   │   └── ClueDiscoveryTrigger.cs  # Detects boulder displacement and reveals clue
 │   ├── GameAI/
 │   │   ├── Companion.cs             # Crab companion FSM (Waiting, Leading, Following)

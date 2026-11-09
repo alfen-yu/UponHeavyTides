@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1d5552fa9a2c2ea49b90277a448f901e
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 400006
+  packageName: Fish Shader Animation
+  packageVersion: 0.9
+  assetPath: Assets/mc_try/FishMovementScene.unity
+  uploadId: 974624

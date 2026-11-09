@@ -1,4 +1,5 @@
 using UnityEngine;
+using UponHeavyTides.Player;
 
 namespace UponHeavyTides.AI
 {
@@ -6,7 +7,15 @@ namespace UponHeavyTides.AI
     {
         private void OnTriggerEnter(Collider other)
         {
-            if (other.CompareTag("Player") || other.GetComponent<UponHeavyTides.Player.PlayerMovement>() != null)
+            if (other.CompareTag("Player") || other.GetComponent<PlayerMovement>() != null)
+            {
+                NotifyBarracudas(true);
+            }
+        }
+
+        private void OnTriggerStay(Collider other)
+        {
+            if (other.CompareTag("Player") || other.GetComponent<PlayerMovement>() != null)
             {
                 NotifyBarracudas(true);
             }
@@ -14,7 +23,7 @@ namespace UponHeavyTides.AI
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.CompareTag("Player") || other.GetComponent<UponHeavyTides.Player.PlayerMovement>() != null)
+            if (other.CompareTag("Player") || other.GetComponent<PlayerMovement>() != null)
             {
                 NotifyBarracudas(false);
             }
