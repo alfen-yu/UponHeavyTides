@@ -311,19 +311,16 @@ namespace UponHeavyTides.Level1
             if (hasDiscoveredClue) return;
             hasDiscoveredClue = true;
 
+            // Clue finding matches Level 0: no popup green box panel
             if (popupPanel != null)
             {
-                popupPanel.SetActive(true);
-                if (popupTitle != null) popupTitle.text = "Second Clue: Serrated Beak";
-                if (popupBody != null) popupBody.text = "The beast possesses an enormous razor-sharp beak powerful enough to crush ancient reefs and shells.";
-                CancelInvoke(nameof(HidePopupPanel));
-                Invoke(nameof(HidePopupPanel), 5.0f);
+                popupPanel.SetActive(false);
             }
 
             if (hasFoundShell)
             {
                 currentStage = Level1Stage.ReturnToHermitCrab;
-                UpdateObjective("Both Objectives Complete! Exit through the left archway and return the shell to the Hermit Crab!");
+                UpdateObjective("<color=#00FFCC>Clue Recorded!</color> Both Objectives Complete! Return the shell to the Hermit Crab!");
                 if (DialogueManager.Instance != null)
                 {
                     DialogueManager.Instance.StartDialogue(
@@ -335,7 +332,7 @@ namespace UponHeavyTides.Level1
             else
             {
                 currentStage = Level1Stage.ObjectivesActive;
-                UpdateObjective("Clue Tablet Recorded! Retrieve the Lost Golden Shell from the central chamber.");
+                UpdateObjective("<color=#00FFCC>Clue Recorded!</color> Retrieve the Lost Golden Shell from the central chamber.");
                 if (DialogueManager.Instance != null)
                 {
                     DialogueManager.Instance.StartDialogue(
