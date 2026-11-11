@@ -82,7 +82,7 @@ namespace UponHeavyTides.Level0
 
             if (turtleDialogue == null)
             {
-                var turtleObj = GameObject.Find("Elder_Sea_Turtle");
+                var turtleObj = GameObject.Find("ElderSeaTurtle") ?? GameObject.Find("Elder_Sea_Turtle");
                 if (turtleObj != null)
                 {
                     turtleDialogue = turtleObj.GetComponent<DialogueTrigger>();
@@ -91,7 +91,7 @@ namespace UponHeavyTides.Level0
 
             if (fishDialogue == null)
             {
-                var fishObj = GameObject.Find("School_Of_Fish_NPC");
+                var fishObj = GameObject.Find("SchoolOfFish") ?? GameObject.Find("School_Of_Fish_NPC");
                 if (fishObj != null)
                 {
                     fishDialogue = fishObj.GetComponent<DialogueTrigger>();
@@ -100,7 +100,7 @@ namespace UponHeavyTides.Level0
 
             // Find all pearls
             pearlTransforms.Clear();
-            var relicsRoot = GameObject.Find("_EXPLORATION_RELICS");
+            var relicsRoot = GameObject.Find("ExplorationRelics") ?? GameObject.Find("_EXPLORATION_RELICS");
             if (relicsRoot != null)
             {
                 foreach (Transform child in relicsRoot.transform)
@@ -109,6 +109,13 @@ namespace UponHeavyTides.Level0
                     {
                         pearlTransforms.Add(child);
                     }
+                }
+            }
+            if (pearlTransforms.Count == 0)
+            {
+                foreach (var item in FindObjectsByType<CollectibleItem>(FindObjectsSortMode.None))
+                {
+                    pearlTransforms.Add(item.transform);
                 }
             }
         }
@@ -241,7 +248,8 @@ namespace UponHeavyTides.Level0
 
             if (crabCompanion != null)
             {
-                crabCompanion.LeadTowards(new Vector3(0f, 0.4f, -7.5f), () =>
+                // Stand right in front of the Elder Sea Turtle sanctuary, right beside the player
+                crabCompanion.LeadTowards(new Vector3(-1.2f, 0.4f, -13.5f), () =>
                 {
                     currentStage = StoryStage.TalkToTurtle;
                     if (Level0Controller.Instance != null)

@@ -81,20 +81,20 @@ namespace UponHeavyTides.Level1
         {
             if (hermitCrabObj == null)
             {
-                var h = GameObject.Find("HermitCrab_Ailing_NPC");
+                var h = GameObject.Find("HermitCrab") ?? GameObject.Find("HermitCrab_Ailing_NPC");
                 if (h != null) hermitCrabObj = h.transform;
             }
 
             if (goldenShellInMaze == null)
             {
-                var shellObj = GameObject.Find("Hermit_Golden_Shell");
+                var shellObj = GameObject.Find("GoldenShell") ?? GameObject.Find("Hermit_Golden_Shell");
                 if (shellObj != null) goldenShellInMaze = shellObj;
                 else
                 {
-                    var chamber = GameObject.Find("Objective_LostGoldenShell");
+                    var chamber = GameObject.Find("LostGoldenShellObjective") ?? GameObject.Find("Objective_LostGoldenShell");
                     if (chamber != null)
                     {
-                        var t = chamber.transform.Find("Hermit_Golden_Shell");
+                        var t = chamber.transform.Find("GoldenShell") ?? chamber.transform.Find("Hermit_Golden_Shell");
                         if (t != null) goldenShellInMaze = t.gameObject;
                     }
                 }
@@ -223,10 +223,10 @@ namespace UponHeavyTides.Level1
                 }
                 else
                 {
-                    var chamber = GameObject.Find("Objective_LostGoldenShell");
+                    var chamber = GameObject.Find("LostGoldenShellObjective") ?? GameObject.Find("Objective_LostGoldenShell");
                     if (chamber != null)
                     {
-                        var shellChild = chamber.transform.Find("Hermit_Golden_Shell");
+                        var shellChild = chamber.transform.Find("GoldenShell") ?? chamber.transform.Find("Hermit_Golden_Shell");
                         if (shellChild != null)
                         {
                             goldenShellInMaze = shellChild.gameObject;

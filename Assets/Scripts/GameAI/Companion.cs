@@ -128,7 +128,7 @@ namespace UponHeavyTides.AI
             if (currentMode == CompanionMode.LeadingToTarget)
             {
                 float distToDest = Vector3.Distance(transform.position, leadDestination);
-                if (distToDest > 2.0f)
+                if (distToDest > 0.8f)
                 {
                     MoveTowardsPoint(leadDestination);
                 }
@@ -143,8 +143,8 @@ namespace UponHeavyTides.AI
                     onArrivedAtDestination = null;
                     callback?.Invoke();
 
-                    // Face towards the Elder Sea Turtle sanctuary
-                    Vector3 lookDir = (new Vector3(0f, 0f, -10f) - transform.position);
+                    // Face towards the Elder Sea Turtle
+                    Vector3 lookDir = (new Vector3(0f, 0f, -9.5f) - transform.position);
                     lookDir.y = 0;
                     if (lookDir.sqrMagnitude > 0.01f)
                     {

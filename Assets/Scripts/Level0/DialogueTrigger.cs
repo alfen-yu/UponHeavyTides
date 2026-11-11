@@ -104,11 +104,11 @@ namespace UponHeavyTides.Level0
                     {
                         Level0StoryFlow.Instance?.OnCrabIntroFinished();
                     }
-                    else if (name == "Elder_Sea_Turtle")
+                    else if (name == "Elder_Sea_Turtle" || name == "ElderSeaTurtle")
                     {
                         Level0StoryFlow.Instance?.OnTurtleDialogueFinished();
                     }
-                    else if (name == "School_Of_Fish_NPC")
+                    else if (name == "School_Of_Fish_NPC" || name == "SchoolOfFish")
                     {
                         Level0StoryFlow.Instance?.OnFishDialogueFinished();
                     }
