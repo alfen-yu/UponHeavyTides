@@ -6,7 +6,7 @@ public class BillboardScript : MonoBehaviour
 {
     [Tooltip("Locks the rotational up axis of the billboard.")]
     public bool lockUpAxis = true;
-    private Camera camera;
+    private new Camera camera;
 
     // Start is called before the first frame update
     void Start()

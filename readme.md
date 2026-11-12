@@ -20,4 +20,7 @@ Upon Heavy Tides is a single-player 3D underwater adventure built in Unity. A st
 - **Assets/Scenes:** Level 0 (The Shallows), Level 1 (The Kelp Maze)
 - **Assets/Materials:** Underwater surfaces and shaders
 - **Assets/Editor:** Level 0 & Level 1 procedural scene builders
-- **GAMEPLAY_AND_FLOW_GUIDE.md:** Full design, mechanics, and walkthrough documentation
+
+### Architecture 
+- Observer pattern for game events, listeners and invokers. (Core: GameEvents.cs)
+- Singleton Patterns: Journal/Notebook follows the singleton pattern. 

@@ -402,7 +402,7 @@ namespace UponHeavyTides.Editor
             restoredShell.transform.localRotation = Quaternion.Euler(-10f, 40f, 0f);
             restoredShell.SetActive(false);
 
-            var ctrl = Object.FindObjectOfType<UponHeavyTides.Level1.Level1Controller>();
+            var ctrl = Object.FindFirstObjectByType<UponHeavyTides.Level1.Level1Controller>();
             if (ctrl != null)
             {
                 var field = typeof(UponHeavyTides.Level1.Level1Controller).GetField("restoredShellOnHermit", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -839,7 +839,7 @@ namespace UponHeavyTides.Editor
             var shellTrig = shell.AddComponent<UponHeavyTides.Level1.Level1ObjectiveTrigger>();
             shellTrig.SetTriggerType(UponHeavyTides.Level1.Level1ObjectiveTrigger.TriggerType.GoldenShell);
 
-            var ctrl = Object.FindObjectOfType<UponHeavyTides.Level1.Level1Controller>();
+            var ctrl = Object.FindFirstObjectByType<UponHeavyTides.Level1.Level1Controller>();
             if (ctrl != null)
             {
                 var field = typeof(UponHeavyTides.Level1.Level1Controller).GetField("goldenShellInMaze", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
