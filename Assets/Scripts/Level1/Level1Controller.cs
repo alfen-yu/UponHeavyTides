@@ -41,6 +41,8 @@ namespace UponHeavyTides.Level1
         private TextMeshProUGUI popupBody;
         private GameObject victoryPanel;
         private float lastCaughtTime = -10f;
+        private float levelStartTime;
+        private int catchCounter = 0;
 
         public Level1Stage CurrentStage => currentStage;
         public bool HasFoundShell => hasFoundShell;
@@ -73,6 +75,8 @@ namespace UponHeavyTides.Level1
             hasDiscoveredClue = false;
             hasReturnedShell = false;
             lastCaughtTime = -10f;
+            levelStartTime = Time.time;
+            catchCounter = 0;
             if (popupPanel != null) popupPanel.SetActive(false);
             if (victoryPanel != null) victoryPanel.SetActive(false);
         }
@@ -174,6 +178,9 @@ namespace UponHeavyTides.Level1
         {
             if (Time.time < lastCaughtTime + 2.0f) return;
             lastCaughtTime = Time.time;
+
+            catchCounter++;
+            UGS_Analytics.RecordPlayerCaught(catchCounter);
 
             // Teleport player back outside the left archway
             var player = GameObject.FindGameObjectWithTag("Player");
@@ -352,6 +359,9 @@ namespace UponHeavyTides.Level1
         {
             hasReturnedShell = true;
             currentStage = Level1Stage.LevelComplete;
+
+            float duration = Time.time - levelStartTime;
+            UGS_Analytics.RecordTimeToCompletion(duration);
 
             // Restore shell on Hermit Crab model if present
             if (restoredShellOnHermit != null)

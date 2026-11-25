@@ -48,6 +48,8 @@ namespace UponHeavyTides.AI
 
         private Vector3 lastTrackedPos;
         private float stuckTimer = 0f;
+        private float investigateTimer = 0f;
+        private float detectionCooldownTimer = 0f;
 
         public AIState CurrentState => currentState;
 
@@ -107,6 +109,11 @@ namespace UponHeavyTides.AI
         {
             if (playerTarget == null) FindPlayer();
 
+            if (detectionCooldownTimer > 0f)
+            {
+                detectionCooldownTimer -= Time.deltaTime;
+            }
+
             // Run State Machine
             switch (currentState)
             {
@@ -119,15 +126,18 @@ namespace UponHeavyTides.AI
                 case AIState.Investigate:
                     UpdateInvestigate();
                     CheckForPlayerDetection();
+                    CheckForStuck();
                     break;
 
                 case AIState.Chase:
                     UpdateChase();
+                    CheckForChaseStuck();
                     break;
 
                 case AIState.ReturnToPatrol:
                     UpdateReturn();
                     CheckForPlayerDetection();
+                    CheckForStuck();
                     break;
             }
 
@@ -138,6 +148,12 @@ namespace UponHeavyTides.AI
         private void SetState(AIState newState)
         {
             currentState = newState;
+            stuckTimer = 0f;
+
+            if (newState == AIState.Investigate)
+            {
+                investigateTimer = 0f;
+            }
 
             if (visionConeRenderer != null && visionConeRenderer.material != null)
             {
@@ -197,6 +213,11 @@ namespace UponHeavyTides.AI
                             agent.SetDestination(patrolWaypoints[currentWaypointIndex].position);
                         }
                     }
+
+                    if (currentState != AIState.Patrol)
+                    {
+                        SetState(AIState.Patrol);
+                    }
                 }
             }
             else
@@ -206,9 +227,50 @@ namespace UponHeavyTides.AI
             }
         }
 
+        private void CheckForChaseStuck()
+        {
+            float distMoved = Vector3.Distance(transform.position, lastTrackedPos);
+            if (distMoved < 0.25f)
+            {
+                stuckTimer += Time.deltaTime;
+                if (stuckTimer >= 2.0f)
+                {
+                    stuckTimer = 0f;
+                    // Barracuda is stuck against a wall or the maze archway - give up chase!
+                    SetState(AIState.Investigate);
+                }
+            }
+            else
+            {
+                stuckTimer = 0f;
+                lastTrackedPos = transform.position;
+            }
+        }
+
+        private bool IsPlayerInsideMaze()
+        {
+            if (playerTarget == null) return false;
+
+            // Player is outside the left archway entrance if Z < -19.5f
+            if (playerTarget.position.z < -19.5f) return false;
+
+            // Distance to sanctuary respawn position
+            Vector3 respawnPos = new Vector3(-20f, 1f, -22f);
+            Vector3 playerXZ = new Vector3(playerTarget.position.x, 0f, playerTarget.position.z);
+            Vector3 respawnXZ = new Vector3(respawnPos.x, 0f, respawnPos.z);
+            if (Vector3.Distance(playerXZ, respawnXZ) < 6.5f)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private void CheckForPlayerDetection()
         {
             if (playerTarget == null || isPlayerHiding) return;
+            if (detectionCooldownTimer > 0f) return;
+            if (!IsPlayerInsideMaze()) return;
 
             Vector3 origin = transform.position + Vector3.up * 0.5f;
             Vector3 target = playerTarget.position + Vector3.up * 0.5f;
@@ -248,7 +310,7 @@ namespace UponHeavyTides.AI
 
         private void UpdateChase()
         {
-            if (playerTarget == null || isPlayerHiding)
+            if (playerTarget == null || isPlayerHiding || !IsPlayerInsideMaze())
             {
                 SetState(AIState.Investigate);
                 return;
@@ -295,9 +357,13 @@ namespace UponHeavyTides.AI
 
         private void UpdateInvestigate()
         {
+            investigateTimer += Time.deltaTime;
+
             MoveToPosition(investigatePosition);
             float dist = Vector3.Distance(transform.position, investigatePosition);
-            if (dist <= 2.2f)
+
+            // Give up investigation if destination reached or 3.5 seconds elapsed
+            if (dist <= 2.2f || investigateTimer >= 3.5f)
             {
                 SetState(AIState.ReturnToPatrol);
             }
@@ -308,6 +374,8 @@ namespace UponHeavyTides.AI
             if (patrolWaypoints == null || patrolWaypoints.Count == 0) return;
 
             Transform targetWp = patrolWaypoints[currentWaypointIndex];
+            if (targetWp == null) return;
+
             MoveToPosition(targetWp.position);
 
             if (Vector3.Distance(transform.position, targetWp.position) <= waypointReachThreshold)
@@ -390,6 +458,7 @@ namespace UponHeavyTides.AI
 
         public void CatchPlayer()
         {
+            detectionCooldownTimer = 4.5f;
             SetState(AIState.Patrol);
 
             if (UponHeavyTides.Level1.Level1Controller.Instance != null)
@@ -400,7 +469,12 @@ namespace UponHeavyTides.AI
 
         public void ResetToPatrol()
         {
+            detectionCooldownTimer = 4.5f;
+            timeLostSight = 0f;
+            stuckTimer = 0f;
+            investigateTimer = 0f;
             SetState(AIState.Patrol);
+
             if (patrolWaypoints != null && patrolWaypoints.Count > 0)
             {
                 currentWaypointIndex = 0;
@@ -414,6 +488,17 @@ namespace UponHeavyTides.AI
                 {
                     agent.Warp(targetPos);
                     agent.ResetPath();
+                }
+
+                // Turn to face inward towards the next waypoint, away from the maze entrance
+                if (patrolWaypoints.Count > 1 && patrolWaypoints[1] != null)
+                {
+                    Vector3 lookDir = (patrolWaypoints[1].position - targetPos);
+                    lookDir.y = 0f;
+                    if (lookDir.sqrMagnitude > 0.05f)
+                    {
+                        transform.rotation = Quaternion.LookRotation(lookDir.normalized);
+                    }
                 }
             }
         }
